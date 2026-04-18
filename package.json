@@ -6,9 +6,12 @@
   "scripts": {
     "build": "tsc"
   },
-  "dependencies": {},
   "devDependencies": {
+    "prettier": "^3.8.3",
     "typescript": "^5.5.3"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "mongodb": "^7.1.1"
+  }
 }
