@@ -6,7 +6,7 @@ export async function requestUser(req: Request, res: Response): Promise<void> {
     res.json(user);
 }
 
-export async function requestAllUsers(req: Request, res: Response): Promise<void> {
+export async function requestAllUsers(_ :Request, res: Response): Promise<void> {
     const users: User[] = await getAllUsers();
     res.json(users);
 }

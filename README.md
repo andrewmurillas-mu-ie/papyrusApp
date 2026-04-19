@@ -46,19 +46,19 @@ src/
 
 ## API
 
-| Method | Path    | Description        |
-|--------|---------|--------------------|
-| GET    | /user   | Fetch a user by ID |
+| Method | Path      | Description                      |
+|--------|-----------|----------------------------------|
+| GET    | /user     | Fetch all users                  |
+| GET    | /user/:id | Fetch a user by MongoDB ObjectId |
+
+Example:
+```bash
+wget -qO- http://localhost:3000/user/6621f3a2b4e1c2d3e4f56789
+```
 
 ## Environment
 
-The MongoDB connection URI is currently hardcoded in `src/mongo-controller.ts`. Before deploying, move it to an environment variable:
-
-```ts
-const uri = process.env.MONGO_URI!;
-```
-
-And create a `.env` file (never commit this):
+Create a `.env` file in the project root (never commit this):
 
 ```
 MONGO_URI=mongodb+srv://<user>:<password>@<cluster>/?appName=papyrus-cluster
