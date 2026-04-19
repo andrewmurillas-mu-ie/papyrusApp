@@ -1,10 +1,7 @@
 import {Request, Response} from 'express';
-import {User, /**getUser**/} from '../models/user_model.js';
+import {getUser, User} from '../models/user_model.js';
 
-
-export const requestUser = async (req: Request, res: Response) => {
-    // const user: User = await getUser(req.params.id)
-    // if (!user) {
-
-    // }
+export async function requestUser(req: Request, res: Response): Promise<void> {
+    const user: User | undefined = await getUser('000');
+    res.json(user);
 }

@@ -1,8 +1,8 @@
-import express from 'express';
+import {requestUser} from "../controllers/user_controller";
+import express, {Router} from "express";
 
+const router: Router = express.Router();
 
+router.get('/user', requestUser);
 
-const router: express.Router = express.router();
-
-
-router.get('/user/', requestUser);
+export default router;

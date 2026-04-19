@@ -7,11 +7,13 @@
     "build": "tsc"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "prettier": "^3.8.3",
     "typescript": "^5.5.3"
   },
   "private": true,
   "dependencies": {
+    "express": "^5.2.1",
     "mongodb": "^7.1.1"
   }
 }
