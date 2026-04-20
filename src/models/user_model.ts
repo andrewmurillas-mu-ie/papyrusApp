@@ -28,3 +28,18 @@ export async function getAllUsers(): Promise<User[]> {
     const users: Collection<User> = (await db).collection<User>('users')
     return users.find().toArray();
 }
+
+export async function createUser(user: User): Promise<void> {
+    const users: Collection<User> = (await db).collection<User>('users')
+    await users.insertOne(user);
+}
+
+export async function updateUser(userId: string, user: User): Promise<void> {
+    const users: Collection<User> = (await db).collection<User>('users')
+    await users.updateOne({ _id: new ObjectId(userId) }, { $set: user });
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+    const users: Collection<User> = (await db).collection<User>('users')
+    await users.deleteOne({ _id: new ObjectId(userId) });
+}

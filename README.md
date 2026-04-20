@@ -46,14 +46,35 @@ src/
 
 ## API
 
-| Method | Path      | Description                      |
-|--------|-----------|----------------------------------|
-| GET    | /user     | Fetch all users                  |
-| GET    | /user/:id | Fetch a user by MongoDB ObjectId |
+| Method | Path        | Description                      |
+|--------|-------------|----------------------------------|
+| GET    | /user       | Fetch all users                  |
+| GET    | /user/:id   | Fetch a user by MongoDB ObjectId |
+| POST   | /user       | Create a new user                |
+| PUT    | /user/:id   | Update an existing user          |
+| DELETE | /user/:id   | Delete a user                    |
 
-Example:
+### Example requests
+
 ```bash
-wget -qO- http://localhost:3000/user/6621f3a2b4e1c2d3e4f56789
+# Get all users
+curl -s http://localhost:3000/user | json_pp
+
+# Create a user
+curl -s -X POST http://localhost:3000/user \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Jane Doe","email":"jane@example.com","passwordHash":"hashed_pw","avatarUrl":"https://example.com/jane.jpg","createdAt":"2026-04-20","updatedAt":"2026-04-20"}' | json_pp
+
+# Get user by ID
+curl -s http://localhost:3000/user/<id> | json_pp
+
+# Update user by ID
+curl -s -X PUT http://localhost:3000/user/<id> \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Jane Smith","email":"jane.smith@example.com","passwordHash":"hashed_pw","avatarUrl":"https://example.com/jane.jpg","createdAt":"2026-04-20","updatedAt":"2026-04-20"}' | json_pp
+
+# Delete user by ID
+curl -s -X DELETE http://localhost:3000/user/<id>
 ```
 
 ## Environment
