@@ -4,7 +4,7 @@ import {Collection, Filter, ObjectId, WithId} from "mongodb";
 export interface User {
     name: string,
     email: string,
-    passwordHash: string,
+    githubId?: string,
     avatarUrl: string,
     createdAt: string,
     updatedAt: string
@@ -12,8 +12,8 @@ export interface User {
 
 function isUser(doc: WithId<User> | null): doc is WithId<User> & User {
     if (!doc) return false;
-    return 'name' in doc && 'email' in doc && 'passwordHash' in doc
-        && 'avatarUrl' in doc && 'createdAt' in doc && 'updatedAt' in doc;
+    return 'name' in doc && 'email' in doc && 'avatarUrl' in doc
+        && 'createdAt' in doc && 'updatedAt' in doc;
 }
 
 export async function getUser(userId: string): Promise<User | null> {
@@ -29,9 +29,15 @@ export async function getAllUsers(): Promise<User[]> {
     return users.find().toArray();
 }
 
-export async function createUser(user: User): Promise<void> {
+export async function createUser(user: User): Promise<User> {
     const users: Collection<User> = (await db).collection<User>('users')
     await users.insertOne(user);
+    return user;
+}
+
+export async function getUserByGithubId(githubId: string): Promise<User | null> {
+    const users: Collection<User> = (await db).collection<User>('users')
+    return users.findOne({ githubId } as Filter<User>);
 }
 
 export async function updateUser(userId: string, user: User): Promise<void> {
