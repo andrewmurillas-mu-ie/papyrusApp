@@ -1,6 +1,6 @@
 import passport from 'passport';
 import { Strategy as GitHubStrategy, Profile } from 'passport-github2';
-import { createUser, getUserByGithubId } from '../models/user_model.js';
+import {createUser, getUserByGithubId, User} from '../models/user_model.js';
 
 passport.use(new GitHubStrategy(
     {
@@ -8,9 +8,9 @@ passport.use(new GitHubStrategy(
         clientSecret: process.env.GITHUB_CLIENT_SECRET!,
         callbackURL: 'http://localhost:3000/auth/github/callback',
     },
-    async (_accessToken: string, _refreshToken: string, profile: Profile, done: Function) => {
+    async (_accessToken: string, _refreshToken: string, profile: Profile, done: Function): Promise<void> => {
         try {
-            let user = await getUserByGithubId(profile.id);
+            let user: User|null = await getUserByGithubId(profile.id);
             if (!user) {
                 user = await createUser({
                     name: profile.displayName || profile.username || '',
