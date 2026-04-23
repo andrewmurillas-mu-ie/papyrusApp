@@ -6,7 +6,7 @@ import authRouter from './routes/auth_routes';
 import './auth/passport';
 
 const app: Application = express();
-const PORT = process.env.PORT || 3000;
+const PORT: number = process.env.PORT as unknown as number || 3000;
 
 app.use(express.json());
 app.use('/auth', authRouter);
