@@ -8,6 +8,7 @@
     "start": "tsc && node dist/index.js"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/passport": "^1.0.17",
@@ -17,6 +18,7 @@
   },
   "private": true,
   "dependencies": {
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
