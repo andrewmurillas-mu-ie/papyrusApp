@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUser = getUser;
 exports.getAllUsers = getAllUsers;
 exports.createUser = createUser;
+exports.getUserByEmail = getUserByEmail;
 exports.getUserByGithubId = getUserByGithubId;
 exports.updateUser = updateUser;
 exports.deleteUser = deleteUser;
@@ -30,6 +31,10 @@ async function createUser(user) {
     const users = (await index_1.db).collection('users');
     await users.insertOne(user);
     return user;
+}
+async function getUserByEmail(email) {
+    const users = (await index_1.db).collection('users');
+    return users.findOne({ email });
 }
 async function getUserByGithubId(githubId) {
     const users = (await index_1.db).collection('users');

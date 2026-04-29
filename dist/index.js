@@ -7,15 +7,22 @@ exports.db = void 0;
 const express_1 = __importDefault(require("express"));
 const mongo_controller_1 = require("./mongo-controller");
 const user_routes_1 = __importDefault(require("./routes/user_routes"));
-const auth_routes_1 = __importDefault(require("./routes/auth_routes"));
-require("./auth/passport");
+// import authRouter from './routes/auth_routes';
+// import './auth/passport';
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
+app.use((0, cors_1.default)({
+    origin: 'http://localhost:5174',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false,
+}));
 app.use(express_1.default.json());
-app.use('/auth', auth_routes_1.default);
+// app.use('/auth', authRouter);
 app.use('/', user_routes_1.default);
 const client = (0, mongo_controller_1.connect)();
-exports.db = client.then(c => c.db('papyrus'));
+exports.db = client.then((c) => c.db('papyrus'));
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
