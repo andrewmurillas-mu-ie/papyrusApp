@@ -2,6 +2,19 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const AuthContext = createContext(null);
 
+// Helper to decode JWT payload (no verification, just reading data)
+const decodeJwt = (token) => {
+  try {
+    const [, payloadBase64] = token.split('.');
+    const payloadJson = atob(
+      payloadBase64.replace(/-/g, '+').replace(/_/g, '/'),
+    );
+    return JSON.parse(payloadJson);
+  } catch {
+    return null;
+  }
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem('papyrus_user');
@@ -55,6 +68,28 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // New: handle GitHub login using the JWT from backend
+  const loginWithGithubToken = (token) => {
+    const payload = decodeJwt(token);
+    if (!payload) {
+      return { ok: false };
+    }
+
+    const githubUser = {
+      id: payload._id || payload.id || payload.userId || payload.githubId,
+      name: payload.name,
+      email: payload.email || '',
+      avatarUrl: payload.avatarUrl || '',
+      createdAt: payload.createdAt,
+      updatedAt: payload.updatedAt,
+      role: payload.role,
+    };
+
+    localStorage.setItem('papyrus_token', token);
+    setUser(githubUser);
+    return { ok: true, mode: 'github' };
+  };
+
   const logout = () => {
     localStorage.removeItem('papyrus_token');
     localStorage.removeItem('papyrus_user');
@@ -62,7 +97,15 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({ user, setUser, loading, login, register, logout }),
+    () => ({
+      user,
+      setUser,
+      loading,
+      login,
+      register,
+      loginWithGithubToken,
+      logout,
+    }),
     [user, loading],
   );
 

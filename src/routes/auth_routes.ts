@@ -7,12 +7,17 @@ const router: Router = express.Router();
 
 router.get('/github', passport.authenticate('github', { scope: ['user:email'], session: false }));
 
-router.get('/github/callback',
-    passport.authenticate('github', { session: false, failureRedirect: '/auth/failure' }),
-    (req: Request, res: Response) => {
-        const token = jwt.sign(req.user as User, process.env.JWT_SECRET!, { expiresIn: '7d' });
-        res.json({ token });
-    }
+router.get(
+  '/github/callback',
+  passport.authenticate('github', { session: false, failureRedirect: '/auth/failure' }),
+  (req: Request, res: Response) => {
+    const token = jwt.sign(req.user as User, process.env.JWT_SECRET!, { expiresIn: '7d' });
+
+    const frontendUrl =
+      process.env.FRONTEND_URL || 'http://localhost:5174';
+
+    res.redirect(`${frontendUrl}/github/callback?token=${encodeURIComponent(token)}`);
+  },
 );
 
 router.get('/failure', (_req: Request, res: Response) => {

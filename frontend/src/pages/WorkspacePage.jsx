@@ -55,12 +55,12 @@ export default function WorkspacePage() {
 
           <div className="grid-two compact-grid">
             <div className="mini-card">
-              <span>Members</span>
-              <strong>3</strong>
+              <span>Members:</span>
+              <strong> 3</strong>
             </div>
             <div className="mini-card">
-              <span>Active pages</span>
-              <strong>12</strong>
+              <span>Active pages:</span>
+              <strong> 12</strong>
             </div>
           </div>
 
