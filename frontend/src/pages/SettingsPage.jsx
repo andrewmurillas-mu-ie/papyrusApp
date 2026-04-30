@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { userService } from '../api/userService';
 import { useAuth } from '../context/AuthContext';
-import InfoBanner from '../components/InfoBanner';
 
 export default function SettingsPage() {
   const { user, setUser } = useAuth();
@@ -35,35 +34,54 @@ export default function SettingsPage() {
     e.preventDefault();
     setStatus({ loading: true, error: '', success: '' });
 
-    if (!user?.id || user.id === 'local-demo-user') {
-      const updated = { ...user, ...profile, updatedAt: new Date().toISOString() };
+    try {
+      if (!user?.id) {
+        setUser({
+          ...user,
+          ...profile,
+          updatedAt: new Date().toISOString(),
+        });
+        setStatus({
+          loading: false,
+          error: '',
+          success: 'Saved locally.',
+        });
+        return;
+      }
+
+      const payload = {
+        name: profile.name,
+        email: profile.email,
+        avatarUrl: profile.avatarUrl,
+        createdAt: profile.createdAt,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const updated = await userService.updateUser(user.id, payload);
+
       setUser(updated);
       setStatus({
         loading: false,
         error: '',
-        success:
-          'Saved locally. Replace with backend update once authenticated user IDs are available.',
+        success: 'Profile saved.',
       });
-      return;
-    }
-
-    try {
-      const payload = { ...profile, updatedAt: new Date().toISOString() };
-      await userService.updateUser(user.id, payload);
-      setUser({ ...user, ...payload });
+    } catch (err) {
       setStatus({
         loading: false,
-        error: '',
-        success: 'Profile updated successfully.',
-      });
-    } catch {
-      setStatus({
-        loading: false,
-        error:
-          'Profile update failed. Confirm the backend user id and payload shape.',
+        error: 'Could not save profile. Please try again.',
         success: '',
       });
     }
+  };
+
+  const formatDate = (isoString) => {
+    if (!isoString) return 'N/A';
+    const date = new Date(isoString);
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   };
 
   return (
@@ -73,28 +91,33 @@ export default function SettingsPage() {
           <p className="eyebrow">Settings</p>
           <h2>Profile and preferences</h2>
           <p className="muted">
-            This is the most complete page in the current frontend stage and is
-            structured to connect to your user backend first.
+            Manage your account details and app preferences.
           </p>
         </div>
       </div>
 
-      <InfoBanner title="Current backend fit">
-        User CRUD exists, so this page is prepared for user profile integration.
-        A current-user auth endpoint and real authenticated session will improve
-        it later.
-      </InfoBanner>
-
       <div className="grid-settings">
         <form className="panel-card form-grid" onSubmit={onSubmit}>
           <div className="settings-header">
-            <div className="avatar-large">
-              {profile.name?.[0] || 'P'}
-            </div>
+            {profile.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt={profile.name}
+                className="avatar-large"
+                style={{
+                  objectFit: 'cover',
+                  borderRadius: '18px',
+                }}
+              />
+            ) : (
+              <div className="avatar-large">
+                {profile.name?.[0] || 'P'}
+              </div>
+            )}
             <div>
               <h3>Profile</h3>
               <p className="muted">
-                Edit the information currently available in the user model.
+                Update your name, email, and avatar.
               </p>
             </div>
           </div>
@@ -154,32 +177,14 @@ export default function SettingsPage() {
             </div>
             <div className="detail-list">
               <div>
-                <span>Created</span>
-                <strong>{profile.createdAt || 'Not available yet'}</strong>
+                <span>Joined</span>
+                <strong>{formatDate(profile.createdAt)}</strong>
               </div>
               <div>
-                <span>Updated</span>
-                <strong>{profile.updatedAt || 'Not available yet'}</strong>
+                <span>Last updated</span>
+                <strong>{formatDate(profile.updatedAt)}</strong>
               </div>
             </div>
-          </article>
-
-          <article className="panel-card">
-            <div className="panel-header">
-              <h3>Preferences</h3>
-            </div>
-            <div className="toggle-row">
-              <span>Compact layout</span>
-              <input type="checkbox" disabled />
-            </div>
-            <div className="toggle-row">
-              <span>Email notifications</span>
-              <input type="checkbox" disabled />
-            </div>
-            <p className="muted">
-              Needs a preferences backend field or separate preferences
-              collection later.
-            </p>
           </article>
 
           <article className="panel-card">
@@ -190,8 +195,7 @@ export default function SettingsPage() {
               Request export
             </button>
             <p className="muted">
-              Add an export endpoint and file generation flow when backup
-              features are ready.
+              Export your data when backup features are ready.
             </p>
           </article>
         </div>

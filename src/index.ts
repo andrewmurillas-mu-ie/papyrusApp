@@ -2,9 +2,11 @@ import express, { Application } from 'express';
 import { Db, MongoClient } from 'mongodb';
 import { connect } from './mongo-controller';
 import userRouter from './routes/user_routes';
-// import authRouter from './routes/auth_routes';
-// import './auth/passport';
+import authRouter from './routes/auth_routes';
+import documentRouter from './routes/document_routes';
+import './auth/passport';
 import cors from 'cors';
+
 
 const app: Application = express();
 const PORT: number = process.env.PORT as unknown as number || 3000;
@@ -14,13 +16,14 @@ app.use(
     origin: 'http://localhost:5174',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: false,
+    credentials: true,
   }),
 );
 
 app.use(express.json());
-// app.use('/auth', authRouter);
+app.use('/auth', authRouter);
 app.use('/', userRouter);
+app.use('/documents', documentRouter);
 
 const client: Promise<MongoClient> = connect();
 export const db: Promise<Db> = client.then((c) => c.db('papyrus'));

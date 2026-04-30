@@ -4,6 +4,17 @@ import { userService } from '../api/userService';
 import { useAuth } from '../context/AuthContext';
 import InfoBanner from '../components/InfoBanner';
 
+const formatDate = (value) => {
+  if (!value) return 'Not available';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not available';
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
@@ -27,10 +38,20 @@ export default function DashboardPage() {
     load();
   }, []);
 
+  const sortedUsers = [...users].sort((a, b) => {
+    if (!user?.id) return 0;
+    const aIsCurrent = a._id === user.id;
+    const bIsCurrent = b._id === user.id;
+    if (aIsCurrent && !bIsCurrent) return -1;
+    if (!aIsCurrent && bIsCurrent) return 1;
+    return 0;
+  });
+
   return (
     <section className="page-stack">
-      <div className="hero-card">
-        <div>
+      {/* hero card with content left, buttons right-middle */}
+      <div className="hero-card hero-card--split">
+        <div className="hero-copy">
           <p className="eyebrow">Dashboard</p>
           <h2>Hello, {user?.name || 'there'}</h2>
           <p className="muted">
@@ -39,7 +60,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="quick-actions">
+        <div className="quick-actions quick-actions--right">
           <Link className="primary-button" to="/workspace">
             Open workspace
           </Link>
@@ -50,9 +71,9 @@ export default function DashboardPage() {
       </div>
 
       <InfoBanner title="Backend integration status">
-        Workspaces, pages, templates, versions, and AI actions are not in the
-        backend yet. This dashboard shows a real user area and a placeholder
-        workspace overview.
+        User accounts are live and connected to MongoDB. Workspaces, pages,
+        templates, versions, and AI actions are still frontend-only
+        placeholders.
       </InfoBanner>
 
       <div className="grid-two">
@@ -60,14 +81,40 @@ export default function DashboardPage() {
           <div className="panel-header">
             <h3>Current user</h3>
           </div>
-          <div className="detail-list">
-            <div>
-              <span>Name</span>
-              <strong>{user?.name || 'Papyrus User'}</strong>
+
+          <div className="settings-header" style={{ marginBottom: '1rem' }}>
+            <div className="avatar-large">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user?.name || 'User avatar'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 'inherit',
+                    objectFit: 'cover',
+                  }}
+                />
+              ) : (
+                (user?.name?.[0] || 'U')
+              )}
             </div>
             <div>
-              <span>Email</span>
-              <strong>{user?.email || 'Not connected yet'}</strong>
+              <h3>{user?.name || 'Papyrus User'}</h3>
+              <p className="muted">
+                {user?.email || 'GitHub-connected user'}
+              </p>
+            </div>
+          </div>
+
+          <div className="detail-list">
+            <div>
+              <span>Joined</span>
+              <strong>{formatDate(user?.createdAt)}</strong>
+            </div>
+            <div>
+              <span>Last updated</span>
+              <strong>{formatDate(user?.updatedAt)}</strong>
             </div>
           </div>
         </article>
@@ -89,9 +136,7 @@ export default function DashboardPage() {
       <article className="panel-card">
         <div className="panel-header">
           <h3>Users from backend</h3>
-          <span>
-            {loading ? 'Loading...' : `${users.length} loaded`}
-          </span>
+          <span>{loading ? 'Loading...' : `${users.length} loaded`}</span>
         </div>
 
         {error ? <p className="form-error">{error}</p> : null}
@@ -107,20 +152,26 @@ export default function DashboardPage() {
         ) : null}
 
         <div className="list-stack">
-          {users.map((item, index) => (
-            <div
-              key={`${item.email}-${index}`}
-              className="list-row"
-            >
-              <div className="avatar-circle">
-                {item.name?.[0] || 'U'}
+          {sortedUsers.map((item, index) => {
+            const isCurrent = user?.id && item._id === user.id;
+            return (
+              <div
+                key={`${item.email}-${index}`}
+                className="list-row"
+                style={
+                  isCurrent ? { borderColor: 'var(--primary)' } : undefined
+                }
+              >
+                <div className="avatar-circle">
+                  {item.name?.[0] || 'U'}
+                </div>
+                <div>
+                  <strong>{item.name}</strong>
+                  <p className="muted">{item.email || 'No email set'}</p>
+                </div>
               </div>
-              <div>
-                <strong>{item.name}</strong>
-                <p>{item.email}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </article>
     </section>

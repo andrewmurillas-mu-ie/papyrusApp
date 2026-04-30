@@ -11,8 +11,11 @@ const mongodb_1 = require("mongodb");
 function isUser(doc) {
     if (!doc)
         return false;
-    return 'name' in doc && 'email' in doc && 'avatarUrl' in doc
-        && 'createdAt' in doc && 'updatedAt' in doc;
+    return ('name' in doc &&
+        'email' in doc &&
+        'avatarUrl' in doc &&
+        'createdAt' in doc &&
+        'updatedAt' in doc);
 }
 async function getUser(userId) {
     const users = (await index_1.db).collection('users');
