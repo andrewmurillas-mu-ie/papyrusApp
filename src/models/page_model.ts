@@ -15,11 +15,14 @@ export default interface Page {
 function isPage(doc: WithId<Page> | null): doc is WithId<Page> & Page {
   if (!doc) return false;
   return (
-    "name" in doc
-    // "email" in doc &&
-    // "avatarUrl" in doc &&
-    // "createdAt" in doc &&
-    // "updatedAt" in doc
+    "title" in doc &&
+    "workspace" in doc &&
+    "createdBy" in doc &&
+    "block" in doc &&
+    "isShared" in doc &&
+    "currentVersion" in doc &&
+    "createdAt" in doc &&
+    "updatedAt" in doc
   );
 }
 
