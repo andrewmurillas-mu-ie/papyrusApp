@@ -1,76 +1,57 @@
 import { db } from "../index";
 import { Collection, Filter, ObjectId, WithId } from "mongodb";
-import { Workspace } from "./workspace_model";
 
 export default interface Block {
-  page: string;
+  page: ObjectId;
   type: string;
+  content: any;
   order: number;
-  createdAt: Date;
-  lastUpdate: Date;
+  createdAt: any;
+  lastUpdated: Date;
 }
 
-function isWorkspace(
-  doc: WithId<Workspace> | null,
-): doc is WithId<Workspace> & Workspace {
+function isBlock(doc: WithId<Block> | null): doc is WithId<Block> & Block {
   if (!doc) return false;
   return (
-    "name" in doc
-    // "email" in doc &&
-    // "avatarUrl" in doc &&
-    // "createdAt" in doc &&
-    // "updatedAt" in doc
+    "page" in doc &&
+    "type" in doc &&
+    "content" in doc &&
+    "order" in doc &&
+    "createAt" in doc &&
+    "lastUpdated" in doc
   );
 }
 
-export async function getWorkspace(
-  WorkspaceId: string,
-): Promise<Workspace | null> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
-    "Workspaces",
-  );
-  const query: Filter<Workspace> = {
-    _id: new ObjectId(WorkspaceId),
-  } as Filter<Workspace>;
-  const WorkspaceDocument: WithId<Workspace> | any =
-    await Workspaces.findOne(query);
-  if (!isWorkspace(WorkspaceDocument)) return null;
-  return WorkspaceDocument;
+export async function getBlock(BlockId: string): Promise<Block | null> {
+  const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
+  const query: Filter<Block> = {
+    _id: new ObjectId(BlockId),
+  } as Filter<Block>;
+  const BlockDocument: WithId<Block> | any = await Blocks.findOne(query);
+  if (!isBlock(BlockDocument)) return null;
+  return BlockDocument;
 }
 
-export async function getAllWorkspaces(): Promise<Workspace[]> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
-    "Workspaces",
-  );
-  return Workspaces.find().toArray();
+export async function getAllBlocks(): Promise<Block[]> {
+  const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
+  return Blocks.find().toArray();
 }
 
-export async function createWorkspace(
-  Workspace: Workspace,
-): Promise<Workspace> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
-    "Workspaces",
-  );
-  await Workspaces.insertOne(Workspace);
-  return Workspace;
+export async function createBlock(Block: Block): Promise<Block> {
+  const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
+  await Blocks.insertOne(Block);
+  return Block;
 }
 
-export async function updateWorkspace(
-  WorkspaceId: string,
-  Workspace: Workspace,
+export async function updateBlock(
+  BlockId: string,
+  Block: Block,
 ): Promise<void> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
-    "Workspaces",
-  );
-  await Workspaces.updateOne(
-    { _id: new ObjectId(WorkspaceId) },
-    { $set: Workspace },
-  );
+  const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
+  await Blocks.updateOne({ _id: new ObjectId(BlockId) }, { $set: Block });
 }
 
-export async function deleteWorkspace(WorkspaceId: string): Promise<void> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
-    "Workspaces",
-  );
-  await Workspaces.deleteOne({ _id: new ObjectId(WorkspaceId) });
+export async function deleteBlock(BlockId: string): Promise<void> {
+  const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
+  await Blocks.deleteOne({ _id: new ObjectId(BlockId) });
 }
