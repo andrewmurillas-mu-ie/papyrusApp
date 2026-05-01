@@ -1,6 +1,11 @@
 import { ChangeEvent, ReactElement, useState } from "react";
-import { Link, NavigateFunction, useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.tsx";
+import {
+  Link,
+  NavigateFunction,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
+import useAuth from "../context/AuthContext.tsx";
 
 export default function LoginPage(): ReactElement {
   const navigate: NavigateFunction = useNavigate();
@@ -8,7 +13,9 @@ export default function LoginPage(): ReactElement {
   const { login, loading } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState(
-    params.get('error') === 'github_failed' ? 'GitHub sign-in failed. Please try again.' : ''
+    params.get("error") === "github_failed"
+      ? "GitHub sign-in failed. Please try again."
+      : "",
   );
 
   const onSubmit: (e: {
@@ -76,7 +83,9 @@ export default function LoginPage(): ReactElement {
           </button>
         </form>
 
-        <div className="divider"><span>or</span></div>
+        <div className="divider">
+          <span>or</span>
+        </div>
 
         <a
           className="secondary-button"

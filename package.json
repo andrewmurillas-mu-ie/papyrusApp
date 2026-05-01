@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "tsc && node dist/index.js"
+    "start": "tsc && node dist/index.js",
+    "dev": "concurrently \"tsc --watch\" \"node --watch dist/index.js\" \"npm run dev --prefix frontend\""
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

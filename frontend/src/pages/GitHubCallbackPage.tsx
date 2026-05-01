@@ -1,14 +1,18 @@
 import { ReactElement, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.tsx";
+import {
+  NavigateFunction,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
+import useAuth from "../context/AuthContext.tsx";
 
 export default function GitHubCallbackPage(): ReactElement {
   const [params] = useSearchParams();
   const { loginWithToken } = useAuth();
-  const navigate = useNavigate();
+  const navigate: NavigateFunction = useNavigate();
 
   useEffect((): void => {
-    const token = params.get("token");
+    const token: string | null = params.get("token");
     if (token) {
       loginWithToken(token);
       navigate("/dashboard", { replace: true });

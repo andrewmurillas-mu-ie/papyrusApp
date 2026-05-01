@@ -17,12 +17,12 @@ function isBlock(doc: WithId<Block> | null): doc is WithId<Block> & Block {
     "type" in doc &&
     "content" in doc &&
     "order" in doc &&
-    "createAt" in doc &&
+    "createdAt" in doc &&
     "lastUpdated" in doc
   );
 }
 
-export async function getBlock(blockId: ObjectId): Promise<Block | null> {
+export async function getBlock(blockId: string): Promise<Block | null> {
   const blocks: Collection<Block> = (await db).collection<Block>("Blocks");
   const query: Filter<Block> = {
     _id: new ObjectId(blockId),

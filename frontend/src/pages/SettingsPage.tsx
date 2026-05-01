@@ -1,21 +1,21 @@
-import React, {ChangeEvent, ReactElement, useEffect, useState} from 'react';
-import { userService } from '../api/userService';
-import { useAuth } from '../context/AuthContext.tsx';
-import InfoBanner from '../components/InfoBanner';
+import React, { ChangeEvent, ReactElement, useEffect, useState } from "react";
+import { userService } from "../api/userService";
+import useAuth from "../context/AuthContext.tsx";
+import InfoBanner from "../components/InfoBanner";
 
 export default function SettingsPage(): ReactElement {
   const { user, setUser } = useAuth();
   const [profile, setProfile] = useState({
-    name: '',
-    email: '',
-    avatarUrl: '',
-    createdAt: '',
-    updatedAt: '',
+    name: "",
+    email: "",
+    avatarUrl: "",
+    createdAt: "",
+    updatedAt: "",
   });
   const [status, setStatus] = useState({
     loading: false,
-    error: '',
-    success: '',
+    error: "",
+    success: "",
   });
 
   interface Profile {
@@ -28,35 +28,39 @@ export default function SettingsPage(): ReactElement {
 
   useEffect((): void => {
     if (user) {
-      setProfile((current: Profile): Profile => ({
-        ...current,
-        name: user.name || '',
-        email: user.email || '',
-        avatarUrl: user.avatarUrl || '',
-        createdAt: user.createdAt || '',
-        updatedAt: user.updatedAt || '',
-      }));
+      setProfile(
+        (current: Profile): Profile => ({
+          ...current,
+          name: user.name || "",
+          email: user.email || "",
+          avatarUrl: user.avatarUrl || "",
+          createdAt: user.createdAt || "",
+          updatedAt: user.updatedAt || "",
+        }),
+      );
     }
   }, [user]);
 
   const onSubmit: (e: {
     preventDefault: () => void;
-  }) => Promise<void> = async (e: { preventDefault: () => void; }): Promise<void> => {
+  }) => Promise<void> = async (e: {
+    preventDefault: () => void;
+  }): Promise<void> => {
     e.preventDefault();
-    setStatus({ loading: true, error: '', success: '' });
+    setStatus({ loading: true, error: "", success: "" });
 
-    if (!user?.id || user.id === 'local-demo-user') {
+    if (!user?.id || user.id === "local-demo-user") {
       const updated = {
-        id: user?.id ?? 'local-demo-user',
+        id: user?.id ?? "local-demo-user",
         ...profile,
         updatedAt: new Date().toISOString(),
       };
       setUser(updated);
       setStatus({
         loading: false,
-        error: '',
+        error: "",
         success:
-          'Saved locally. Replace with backend update once authenticated user IDs are available.',
+          "Saved locally. Replace with backend update once authenticated user IDs are available.",
       });
       return;
     }
@@ -64,18 +68,18 @@ export default function SettingsPage(): ReactElement {
     try {
       const payload = { ...profile, updatedAt: new Date().toISOString() };
       await userService.updateUser(user.id, payload);
-      setUser({...user, ...payload});
+      setUser({ ...user, ...payload });
       setStatus({
         loading: false,
-        error: '',
-        success: 'Profile updated successfully.',
+        error: "",
+        success: "Profile updated successfully.",
       });
     } catch {
       setStatus({
         loading: false,
         error:
-          'Profile update failed. Confirm the backend user id and payload shape.',
-        success: '',
+          "Profile update failed. Confirm the backend user id and payload shape.",
+        success: "",
       });
     }
   };
@@ -102,9 +106,7 @@ export default function SettingsPage(): ReactElement {
       <div className="grid-settings">
         <form className="panel-card form-grid" onSubmit={onSubmit}>
           <div className="settings-header">
-            <div className="avatar-large">
-              {profile.name?.[0] || 'P'}
-            </div>
+            <div className="avatar-large">{profile.name?.[0] || "P"}</div>
             <div>
               <h3>Profile</h3>
               <p className="muted">
@@ -117,9 +119,9 @@ export default function SettingsPage(): ReactElement {
             Full name
             <input
               value={profile.name}
-              onChange={(e: ChangeEvent<HTMLInputElement, HTMLInputElement>): void =>
-                setProfile({ ...profile, name: e.target.value })
-              }
+              onChange={(
+                e: ChangeEvent<HTMLInputElement, HTMLInputElement>,
+              ): void => setProfile({ ...profile, name: e.target.value })}
             />
           </label>
 
@@ -128,9 +130,9 @@ export default function SettingsPage(): ReactElement {
             <input
               type="email"
               value={profile.email}
-              onChange={(e: ChangeEvent<HTMLInputElement, HTMLInputElement>): void =>
-                setProfile({ ...profile, email: e.target.value })
-              }
+              onChange={(
+                e: ChangeEvent<HTMLInputElement, HTMLInputElement>,
+              ): void => setProfile({ ...profile, email: e.target.value })}
             />
           </label>
 
@@ -138,16 +140,14 @@ export default function SettingsPage(): ReactElement {
             Avatar URL
             <input
               value={profile.avatarUrl}
-              onChange={(e: ChangeEvent<HTMLInputElement, HTMLInputElement>): void =>
-                setProfile({ ...profile, avatarUrl: e.target.value })
-              }
+              onChange={(
+                e: ChangeEvent<HTMLInputElement, HTMLInputElement>,
+              ): void => setProfile({ ...profile, avatarUrl: e.target.value })}
               placeholder="https://example.com/avatar.jpg"
             />
           </label>
 
-          {status.error ? (
-            <p className="form-error">{status.error}</p>
-          ) : null}
+          {status.error ? <p className="form-error">{status.error}</p> : null}
           {status.success ? (
             <p className="form-success">{status.success}</p>
           ) : null}
@@ -157,7 +157,7 @@ export default function SettingsPage(): ReactElement {
             type="submit"
             disabled={status.loading}
           >
-            {status.loading ? 'Saving...' : 'Save changes'}
+            {status.loading ? "Saving..." : "Save changes"}
           </button>
         </form>
 
@@ -169,11 +169,11 @@ export default function SettingsPage(): ReactElement {
             <div className="detail-list">
               <div>
                 <span>Created</span>
-                <strong>{profile.createdAt || 'Not available yet'}</strong>
+                <strong>{profile.createdAt || "Not available yet"}</strong>
               </div>
               <div>
                 <span>Updated</span>
-                <strong>{profile.updatedAt || 'Not available yet'}</strong>
+                <strong>{profile.updatedAt || "Not available yet"}</strong>
               </div>
             </div>
           </article>

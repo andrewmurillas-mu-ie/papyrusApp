@@ -7,12 +7,17 @@ const express_1 = __importDefault(require("express"));
 const passport_js_1 = __importDefault(require("../auth/passport.js"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const router = express_1.default.Router();
-router.get('/github', passport_js_1.default.authenticate('github', { scope: ['user:email'], session: false }));
-router.get('/github/callback', passport_js_1.default.authenticate('github', { session: false, failureRedirect: '/auth/failure' }), (req, res) => {
-    const token = jsonwebtoken_1.default.sign(req.user, process.env.JWT_SECRET, { expiresIn: '7d' });
+router.get("/github", passport_js_1.default.authenticate("github", { scope: ["user:email"], session: false }));
+router.get("/github/callback", passport_js_1.default.authenticate("github", {
+    session: false,
+    failureRedirect: "/auth/failure",
+}), (req, res) => {
+    const token = jsonwebtoken_1.default.sign(req.user, process.env.JWT_SECRET, {
+        expiresIn: "7d",
+    });
     res.json({ token });
 });
-router.get('/failure', (_req, res) => {
-    res.status(401).json({ error: 'GitHub authentication failed' });
+router.get("/failure", (_req, res) => {
+    res.status(401).json({ error: "GitHub authentication failed" });
 });
 exports.default = router;
