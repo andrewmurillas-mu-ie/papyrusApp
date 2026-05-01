@@ -1,10 +1,8 @@
-import { db } from "../index";
-import { Collection, Filter, ObjectId, WithId } from "mongodb";
-import User from "./user_model";
+import { ObjectId } from "mongodb";
 
 export default interface Version {
   page: ObjectId;
-  versionNumber: number;
+  versionNumber: Number;
   snapshot: any;
   savedBy: ObjectId;
   createAt: Date;

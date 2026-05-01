@@ -1,15 +1,13 @@
 import { db } from "../index";
 import { Collection, Filter, ObjectId, WithId } from "mongodb";
 
-import Block from "./block_model";
-
 export default interface Template {
   name: string;
   description: string;
   createdBy: ObjectId;
-  blocks: Block[];
-  isPublic: boolean;
-  category: string;
+  blocks: Array<{ type: string; content: any; order: Number }>;
+  isPublic: Boolean;
+  category: "to-do" | "planner" | "expense" | "notes" | "other";
   createdAt: Date;
   lastUpdated: Date;
 }

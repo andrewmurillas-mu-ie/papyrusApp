@@ -3,10 +3,10 @@ import { Collection, Filter, ObjectId, WithId } from "mongodb";
 
 export default interface Block {
   page: ObjectId;
-  type: string;
-  content: any;
-  order: number;
-  createdAt: any;
+  type: "heading" | "text" | "checklist" | "table" | "image";
+  content: Record<string, unknown>;
+  order: Number;
+  createdAt: Date;
   lastUpdated: Date;
 }
 
@@ -22,19 +22,14 @@ function isBlock(doc: WithId<Block> | null): doc is WithId<Block> & Block {
   );
 }
 
-export async function getBlock(BlockId: string): Promise<Block | null> {
-  const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
+export async function getBlock(blockId: ObjectId): Promise<Block | null> {
+  const blocks: Collection<Block> = (await db).collection<Block>("Blocks");
   const query: Filter<Block> = {
-    _id: new ObjectId(BlockId),
+    _id: new ObjectId(blockId),
   } as Filter<Block>;
-  const BlockDocument: WithId<Block> | any = await Blocks.findOne(query);
-  if (!isBlock(BlockDocument)) return null;
-  return BlockDocument;
-}
-
-export async function getAllBlocks(): Promise<Block[]> {
-  const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
-  return Blocks.find().toArray();
+  const blockDocument: WithId<Block> | any = await blocks.findOne(query);
+  if (!isBlock(blockDocument)) return null;
+  return blockDocument;
 }
 
 export async function createBlock(Block: Block): Promise<Block> {

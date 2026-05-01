@@ -1,6 +1,6 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.tsx';
-import {ReactElement} from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import useAuth from "../context/AuthContext.tsx";
+import { ReactElement } from "react";
 
 export default function ProtectedRoute(): ReactElement {
   const { user } = useAuth();

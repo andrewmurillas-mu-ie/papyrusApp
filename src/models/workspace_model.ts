@@ -1,21 +1,12 @@
 import { db } from "../index";
 import { Collection, Filter, ObjectId, WithId } from "mongodb";
-import User from "./user_model";
-import Template from "./template_model";
-
-enum permission {
-  owner = 0,
-  editor = 1,
-  viewer = 2,
-}
 
 export interface Workspace {
   name: string;
-  owner: User;
-  members: User[];
-  permissions: permission[];
+  owner: ObjectId;
+  members: Array<{ user: ObjectId; permission: "owner" | "editor" | "viewer" }>;
   createdAt: Date;
-  lastUpdate: Date;
+  lastUpdated: Date;
 }
 
 function isWorkspace(
@@ -23,11 +14,7 @@ function isWorkspace(
 ): doc is WithId<Workspace> & Workspace {
   if (!doc) return false;
   return (
-    "name" in doc &&
-    "owner" in doc &&
-    "members" in doc &&
-    "permissions" in doc &&
-    "updatedAt" in doc
+    "name" in doc && "owner" in doc && "members" in doc && "updatedAt" in doc
   );
 }
 

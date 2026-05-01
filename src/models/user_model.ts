@@ -4,7 +4,7 @@ import { Collection, Filter, ObjectId, WithId } from "mongodb";
 export default interface User {
   name: string;
   email: string;
-  githubId?: string;
+  githubId: string;
   avatarUrl: string;
   createdAt: string;
   updatedAt: string;

@@ -4,10 +4,11 @@ import User from "./user_model";
 
 export default interface Page {
   title: string;
-  workspace: string;
-  createdBy: User;
-  isShared: boolean;
-  currentVersion: number;
+  workspace: ObjectId;
+  createdBy: ObjectId;
+  blocks: ObjectId[];
+  isShared: Boolean;
+  currentVersion: Number;
   createdAt: Date;
   lastUpdate: Date;
 }
