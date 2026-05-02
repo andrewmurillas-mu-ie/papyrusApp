@@ -1,10 +1,9 @@
-import { ObjectId } from "mongodb";
-
 export default interface Version {
-  page: ObjectId;
+  _id: string;
+  page: string;
   versionNumber: number;
   snapshot: any;
-  savedBy: ObjectId;
+  savedBy: string;
   createAt: Date;
   updatedAt: Date;
 }

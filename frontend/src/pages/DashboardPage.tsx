@@ -1,9 +1,9 @@
 import React, { ReactElement, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { userService } from "../api/userService";
+import userService from "../api/userService";
 import useAuth from "../context/AuthContext.tsx";
 import InfoBanner from "../components/InfoBanner";
-import User from "../api/userService.ts";
+import User from "../backend_objects/User.ts";
 
 export default function DashboardPage(): ReactElement {
   const { user } = useAuth();

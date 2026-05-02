@@ -1,5 +1,5 @@
 import React, { ChangeEvent, ReactElement, useEffect, useState } from "react";
-import { userService } from "../api/userService";
+import userService from "../api/userService";
 import useAuth from "../context/AuthContext.tsx";
 import InfoBanner from "../components/InfoBanner";
 

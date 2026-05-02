@@ -6,8 +6,8 @@ export default interface Page {
   workspace: ObjectId;
   createdBy: ObjectId;
   blocks: ObjectId[];
-  isShared: Boolean;
-  currentVersion: Number;
+  isShared: boolean;
+  currentVersion: number;
   createdAt: Date;
   lastUpdate: Date;
 }

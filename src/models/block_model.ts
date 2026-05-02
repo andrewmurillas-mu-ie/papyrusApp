@@ -5,7 +5,7 @@ export default interface Block {
   page: ObjectId;
   type: "heading" | "text" | "checklist" | "table" | "image";
   content: Record<string, unknown>;
-  order: Number;
+  order: number;
   createdAt: Date;
   lastUpdated: Date;
 }

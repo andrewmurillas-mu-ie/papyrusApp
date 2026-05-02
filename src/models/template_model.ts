@@ -5,8 +5,8 @@ export default interface Template {
   name: string;
   description: string;
   createdBy: ObjectId;
-  blocks: Array<{ type: string; content: any; order: Number }>;
-  isPublic: Boolean;
+  blocks: Array<{ type: string; content: any; order: number }>;
+  isPublic: boolean;
   category: "to-do" | "planner" | "expense" | "notes" | "other";
   createdAt: Date;
   lastUpdated: Date;
