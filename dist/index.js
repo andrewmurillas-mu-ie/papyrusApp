@@ -11,7 +11,6 @@ const user_routes_1 = __importDefault(require("./routes/user_routes"));
 const auth_routes_1 = __importDefault(require("./routes/auth_routes"));
 const page_routes_1 = __importDefault(require("./routes/page_routes"));
 require("./auth/passport");
-const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
 app.use((0, cors_1.default)({ origin: "http://localhost:5173" }));
