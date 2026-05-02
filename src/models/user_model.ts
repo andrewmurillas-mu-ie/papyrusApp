@@ -1,5 +1,6 @@
 import { db } from "../index";
-import { Collection, Filter, ObjectId, WithId } from "mongodb";
+import { Collection, Filter, WithId } from "mongodb";
+import { Types } from "mongoose";
 
 export default interface User {
   fullName: string;
@@ -24,7 +25,7 @@ function isUser(doc: WithId<User> | null): doc is WithId<User> & User {
 
 export async function getUser(userId: string): Promise<User | null> {
   const users: Collection<User> = (await db).collection<User>("users");
-  const query: Filter<User> = { _id: new ObjectId(userId) } as Filter<User>;
+  const query: Filter<User> = { _id: new Types.ObjectId(userId) } as Filter<User>;
   const userDocument: WithId<User> | any = await users.findOne(query);
   if (!isUser(userDocument)) return null;
   return userDocument;
@@ -50,10 +51,10 @@ export async function getUserByGithubId(
 
 export async function updateUser(userId: string, user: User): Promise<void> {
   const users: Collection<User> = (await db).collection<User>("users");
-  await users.updateOne({ _id: new ObjectId(userId) }, { $set: user });
+  await users.updateOne({ _id: new Types.ObjectId(userId) }, { $set: user });
 }
 
 export async function deleteUser(userId: string): Promise<void> {
   const users: Collection<User> = (await db).collection<User>("users");
-  await users.deleteOne({ _id: new ObjectId(userId) });
+  await users.deleteOne({ _id: new Types.ObjectId(userId) });
 }

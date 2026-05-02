@@ -1,10 +1,13 @@
-import { ObjectId } from "mongodb";
+import { Schema, Types } from "mongoose";
+
+type Mixed = Schema.Types.Mixed;
+type ObjectId = Types.ObjectId;
 
 export default interface Version {
   page: ObjectId;
   versionNumber: number;
-  snapshot: any;
+  snapshot: Mixed;
   savedBy: ObjectId;
-  createAt: Date;
+  createdAt: Date;
   updatedAt: Date;
 }

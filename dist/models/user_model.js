@@ -7,7 +7,7 @@ exports.getUserByGithubId = getUserByGithubId;
 exports.updateUser = updateUser;
 exports.deleteUser = deleteUser;
 const index_1 = require("../index");
-const mongodb_1 = require("mongodb");
+const mongoose_1 = require("mongoose");
 function isUser(doc) {
     if (!doc)
         return false;
@@ -19,7 +19,7 @@ function isUser(doc) {
 }
 async function getUser(userId) {
     const users = (await index_1.db).collection("users");
-    const query = { _id: new mongodb_1.ObjectId(userId) };
+    const query = { _id: new mongoose_1.Types.ObjectId(userId) };
     const userDocument = await users.findOne(query);
     if (!isUser(userDocument))
         return null;
@@ -40,9 +40,9 @@ async function getUserByGithubId(githubId) {
 }
 async function updateUser(userId, user) {
     const users = (await index_1.db).collection("users");
-    await users.updateOne({ _id: new mongodb_1.ObjectId(userId) }, { $set: user });
+    await users.updateOne({ _id: new mongoose_1.Types.ObjectId(userId) }, { $set: user });
 }
 async function deleteUser(userId) {
     const users = (await index_1.db).collection("users");
-    await users.deleteOne({ _id: new mongodb_1.ObjectId(userId) });
+    await users.deleteOne({ _id: new mongoose_1.Types.ObjectId(userId) });
 }

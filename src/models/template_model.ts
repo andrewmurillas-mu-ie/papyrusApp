@@ -1,11 +1,18 @@
 import { db } from "../index";
-import { Collection, Filter, ObjectId, WithId } from "mongodb";
+import { Collection, Filter, WithId } from "mongodb";
+import { Types } from "mongoose";
+
+type ObjectId = Types.ObjectId;
 
 export default interface Template {
   name: string;
   description: string;
   createdBy: ObjectId;
-  blocks: Array<{ type: string; content: any; order: number }>;
+  blocks: Array<{
+    type: string;
+    content: Record<string, unknown>;
+    order: number;
+  }>;
   isPublic: boolean;
   category: "to-do" | "planner" | "expense" | "notes" | "other";
   createdAt: Date;
@@ -24,7 +31,7 @@ function isTemplate(
     "isPublic" in doc &&
     "category" in doc &&
     "createdAt" in doc &&
-    "updatedAt" in doc
+    "lastUpdated" in doc
   );
 }
 
@@ -35,7 +42,7 @@ export async function getTemplate(
     "templates",
   );
   const query: Filter<Template> = {
-    _id: new ObjectId(TemplateId),
+    _id: new Types.ObjectId(TemplateId),
   } as Filter<Template>;
   const TemplateDocument: WithId<Template> | any =
     await Templates.findOne(query);
@@ -66,7 +73,7 @@ export async function updateTemplate(
     "Templates",
   );
   await Templates.updateOne(
-    { _id: new ObjectId(TemplateId) },
+    { _id: new Types.ObjectId(TemplateId) },
     { $set: Template },
   );
 }
@@ -75,5 +82,5 @@ export async function deleteTemplate(TemplateId: string): Promise<void> {
   const Templates: Collection<Template> = (await db).collection<Template>(
     "Templates",
   );
-  await Templates.deleteOne({ _id: new ObjectId(TemplateId) });
+  await Templates.deleteOne({ _id: new Types.ObjectId(TemplateId) });
 }

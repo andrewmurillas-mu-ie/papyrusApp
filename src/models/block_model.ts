@@ -1,5 +1,8 @@
 import { db } from "../index";
-import { Collection, Filter, ObjectId, WithId } from "mongodb";
+import { Collection, Filter, WithId } from "mongodb";
+import { Types } from "mongoose";
+
+type ObjectId = Types.ObjectId;
 
 export default interface Block {
   page: ObjectId;
@@ -25,7 +28,7 @@ function isBlock(doc: WithId<Block> | null): doc is WithId<Block> & Block {
 export async function getBlock(blockId: string): Promise<Block | null> {
   const blocks: Collection<Block> = (await db).collection<Block>("Blocks");
   const query: Filter<Block> = {
-    _id: new ObjectId(blockId),
+    _id: new Types.ObjectId(blockId),
   } as Filter<Block>;
   const blockDocument: WithId<Block> | any = await blocks.findOne(query);
   if (!isBlock(blockDocument)) return null;
@@ -43,10 +46,10 @@ export async function updateBlock(
   Block: Block,
 ): Promise<void> {
   const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
-  await Blocks.updateOne({ _id: new ObjectId(BlockId) }, { $set: Block });
+  await Blocks.updateOne({ _id: new Types.ObjectId(BlockId) }, { $set: Block });
 }
 
 export async function deleteBlock(BlockId: string): Promise<void> {
   const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
-  await Blocks.deleteOne({ _id: new ObjectId(BlockId) });
+  await Blocks.deleteOne({ _id: new Types.ObjectId(BlockId) });
 }

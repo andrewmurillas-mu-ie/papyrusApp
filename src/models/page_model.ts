@@ -1,5 +1,8 @@
 import { db } from "../index";
-import { Collection, Filter, ObjectId, WithId } from "mongodb";
+import { Collection, Filter, WithId } from "mongodb";
+import { Types } from "mongoose";
+
+type ObjectId = Types.ObjectId;
 
 export default interface Page {
   title: string;
@@ -18,17 +21,19 @@ function isPage(doc: WithId<Page> | null): doc is WithId<Page> & Page {
     "title" in doc &&
     "workspace" in doc &&
     "createdBy" in doc &&
-    "block" in doc &&
+    "blocks" in doc &&
     "isShared" in doc &&
     "currentVersion" in doc &&
     "createdAt" in doc &&
-    "updatedAt" in doc
+    "lastUpdate" in doc
   );
 }
 
 export async function getPage(pageId: string): Promise<Page | null> {
   const pages: Collection<Page> = (await db).collection<Page>("pages");
-  const query: Filter<Page> = { _id: new ObjectId(pageId) } as Filter<Page>;
+  const query: Filter<Page> = {
+    _id: new Types.ObjectId(pageId),
+  } as Filter<Page>;
   const pageDocument: WithId<Page> | any = await pages.findOne(query);
   if (!isPage(pageDocument)) return null;
   return pageDocument;
@@ -47,10 +52,10 @@ export async function createPage(page: Page): Promise<Page> {
 
 export async function updatePage(pageId: string, page: Page): Promise<void> {
   const pages: Collection<Page> = (await db).collection<Page>("pages");
-  await pages.updateOne({ _id: new ObjectId(pageId) }, { $set: page });
+  await pages.updateOne({ _id: new Types.ObjectId(pageId) }, { $set: page });
 }
 
 export async function deletePage(pageId: string): Promise<void> {
   const pages: Collection<Page> = (await db).collection<Page>("pages");
-  await pages.deleteOne({ _id: new ObjectId(pageId) });
+  await pages.deleteOne({ _id: new Types.ObjectId(pageId) });
 }
