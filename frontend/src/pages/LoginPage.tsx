@@ -35,7 +35,7 @@ export default function LoginPage(): ReactElement {
       await login(form.email, form.password);
       navigate("/dashboard");
     } catch (err: any) {
-      const message = err?.response?.data?.error;
+      const message: string | null = err?.response?.data?.error;
       setError(message ?? "Login failed. Please check your credentials.");
     }
   };

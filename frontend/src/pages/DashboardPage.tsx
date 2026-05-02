@@ -3,27 +3,13 @@ import { Link } from "react-router-dom";
 import { userService } from "../api/userService";
 import useAuth from "../context/AuthContext.tsx";
 import InfoBanner from "../components/InfoBanner";
-
-interface BackendUser {
-  name: string;
-  email: string;
-  avatarUrl: string;
-}
+import User from "../api/userService.ts";
 
 export default function DashboardPage(): ReactElement {
   const { user } = useAuth();
-  const [users, setUsers] = useState<BackendUser[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  interface User {
-    _id: string;
-    name: string;
-    email: string;
-    avatarUrl: string;
-    createdAt: string;
-    updatedAt: string;
-  }
 
   useEffect((): void => {
     const load: () => void = async (): Promise<void> => {
@@ -121,11 +107,11 @@ export default function DashboardPage(): ReactElement {
 
         <div className="list-stack">
           {users.map(
-            (item: BackendUser, index: number): ReactElement => (
+            (item: User, index: number): ReactElement => (
               <div key={`${item.email}-${index}`} className="list-row">
-                <div className="avatar-circle">{item.name?.[0] || "U"}</div>
+                <div className="avatar-circle">{item.fullName?.[0] || "U"}</div>
                 <div>
-                  <strong>{item.name}</strong>
+                  <strong>{item.fullName}</strong>
                   <p>{item.email}</p>
                 </div>
               </div>

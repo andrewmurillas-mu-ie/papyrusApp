@@ -6,18 +6,21 @@
   "scripts": {
     "build": "tsc",
     "start": "tsc && node dist/index.js",
-    "dev": "concurrently \"tsc --watch\" \"node --watch dist/index.js\" \"npm run dev --prefix frontend\""
+    "dev": "tsc && concurrently \"node dist/index.js\" \"npm run dev --prefix frontend\""
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/passport": "^1.0.17",
     "@types/passport-github2": "^1.2.9",
+    "concurrently": "^9.2.1",
     "prettier": "^3.8.3",
     "typescript": "^5.5.3"
   },
   "private": true,
   "dependencies": {
+    "@types/cors": "^2.8.19",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",

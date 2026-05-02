@@ -18,11 +18,13 @@ passport.use(
       try {
         let user: User | null = await getUserByGithubId(profile.id);
         if (!user) {
-          user = await createUser({
-            name: profile.displayName || profile.username || "",
+          user = await createUser(
+            {
+            fullName: profile.displayName || profile.username || "",
             email: profile.emails?.[0]?.value || "",
             githubId: profile.id,
             avatarUrl: profile.photos?.[0]?.value || "",
+              role: 'user',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           });

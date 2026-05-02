@@ -1,4 +1,5 @@
 import express, { Application } from "express";
+import cors from "cors";
 import { Db, MongoClient } from "mongodb";
 import { connect } from "./mongo-controller";
 import userRouter from "./routes/user_routes";
@@ -9,6 +10,7 @@ import "./auth/passport";
 const app: Application = express();
 const PORT: number = (process.env.PORT as unknown as number) || 3000;
 
+app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 app.use("/auth", authRouter);
 app.use("/", userRouter);

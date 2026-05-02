@@ -16,10 +16,11 @@ passport_1.default.use(new passport_github2_1.Strategy({
         let user = await (0, user_model_js_1.getUserByGithubId)(profile.id);
         if (!user) {
             user = await (0, user_model_js_1.createUser)({
-                name: profile.displayName || profile.username || "",
+                fullName: profile.displayName || profile.username || "",
                 email: ((_b = (_a = profile.emails) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.value) || "",
                 githubId: profile.id,
                 avatarUrl: ((_d = (_c = profile.photos) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.value) || "",
+                role: 'user',
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             });

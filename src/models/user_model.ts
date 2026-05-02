@@ -2,10 +2,11 @@ import { db } from "../index";
 import { Collection, Filter, ObjectId, WithId } from "mongodb";
 
 export default interface User {
-  name: string;
+  fullName: string;
   email: string;
   githubId: string;
   avatarUrl: string;
+  role: "admin" | "user";
   createdAt: string;
   updatedAt: string;
 }
