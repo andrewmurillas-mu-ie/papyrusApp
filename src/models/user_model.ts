@@ -3,19 +3,19 @@ import { Collection, Filter, ObjectId, WithId } from "mongodb";
 
 export default interface User {
   fullName: string;
-  email: string;
   githubId: string;
-  avatarUrl: string;
+  passwordHash?: string;
   role: "admin" | "user";
-  createdAt: string;
-  updatedAt: string;
+  avatarUrl: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 function isUser(doc: WithId<User> | null): doc is WithId<User> & User {
   if (!doc) return false;
   return (
-    "name" in doc &&
-    "email" in doc &&
+    "fullName" in doc &&
+    "githubId" in doc &&
     "avatarUrl" in doc &&
     "createdAt" in doc &&
     "updatedAt" in doc
@@ -37,7 +37,7 @@ export async function getAllUsers(): Promise<User[]> {
 
 export async function createUser(user: User): Promise<User> {
   const users: Collection<User> = (await db).collection<User>("users");
-  await users.insertOne(user);
+  await users.insertOne(user as any);
   return user;
 }
 
