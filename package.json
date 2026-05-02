@@ -9,6 +9,7 @@
     "dev": "tsc && concurrently \"node dist/index.js\" \"npm run dev --prefix frontend\""
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/passport": "^1.0.17",
