@@ -7,8 +7,8 @@ exports.requireAuth = requireAuth;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 function requireAuth(req, res, next) {
     const header = req.headers.authorization;
-    if (!(header === null || header === void 0 ? void 0 : header.startsWith('Bearer '))) {
-        res.status(401).json({ error: 'Missing or invalid token' });
+    if (!(header === null || header === void 0 ? void 0 : header.startsWith("Bearer "))) {
+        res.status(401).json({ error: "Missing or invalid token" });
         return;
     }
     try {
@@ -16,6 +16,6 @@ function requireAuth(req, res, next) {
         next();
     }
     catch (_a) {
-        res.status(401).json({ error: 'Invalid or expired token' });
+        res.status(401).json({ error: "Invalid or expired token" });
     }
 }

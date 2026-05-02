@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "tsc && node dist/index.js"
+    "start": "tsc && node dist/index.js",
+    "dev": "tsc && concurrently \"node dist/index.js\" \"npm run dev --prefix frontend\""
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -13,16 +14,19 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/passport": "^1.0.17",
     "@types/passport-github2": "^1.2.9",
+    "concurrently": "^9.2.1",
     "prettier": "^3.8.3",
     "typescript": "^5.5.3"
   },
   "private": true,
   "dependencies": {
+    "@types/cors": "^2.8.19",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.1.1",
+    "mongoose": "^9.6.1",
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12"
   }
