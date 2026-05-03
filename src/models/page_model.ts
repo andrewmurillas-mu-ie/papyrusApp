@@ -39,6 +39,45 @@ export async function getPage(pageId: string): Promise<Page | null> {
   return pageDocument;
 }
 
+export async function getPagesByUserWorkspaces(
+  userId: string,
+): Promise<Page[]> {
+  const workspaces: Collection<Document> = (await db).collection("Workspaces");
+  const userObjectId = new Types.ObjectId(userId);
+  const userWorkspaces: WithId<Document>[] = await workspaces
+    .find(
+      { $or: [{ owner: userObjectId }, { "members.user": userObjectId }] },
+      { projection: { _id: 1 } },
+    )
+    .toArray();
+
+  const workspaceIds: ObjectId[] = userWorkspaces.map(
+    (w: WithId<Document>): ObjectId => w._id,
+  );
+
+  const pages: Collection<Page> = (await db).collection<Page>("pages");
+  return pages.find({ workspace: { $in: workspaceIds } }).toArray();
+}
+
+export async function isPageOwnedByUser(
+  pageId: string,
+  userId: string,
+): Promise<boolean> {
+  const pages: Collection<Page> = (await db).collection<Page>("pages");
+  const page: WithId<Page> | null = await pages.findOne(
+    { _id: new Types.ObjectId(pageId) } as Filter<Page>,
+    { projection: { workspace: 1 } },
+  );
+  if (!page) return false;
+
+  const workspaces: Collection<Document> = (await db).collection("Workspaces");
+  const workspace: WithId<Document> | null = await workspaces.findOne({
+    _id: page.workspace,
+    owner: new Types.ObjectId(userId),
+  });
+  return workspace !== null;
+}
+
 export async function getAllPages(): Promise<Page[]> {
   const pages: Collection<Page> = (await db).collection<Page>("pages");
   return pages.find().toArray();

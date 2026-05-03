@@ -4,15 +4,18 @@ import userService from "../api/userService";
 import useAuth from "../context/AuthContext.tsx";
 import InfoBanner from "../components/InfoBanner";
 import User from "../backend_objects/User.ts";
+import pageService from "../api/pageService.ts";
+import Page from "../backend_objects/Page.ts";
 
 export default function DashboardPage(): ReactElement {
   const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect((): void => {
-    const load: () => void = async () => {
+    const load: () => void = async (): Promise<void> => {
       try {
         const data: User[] = await userService.getAllUsers();
         setUsers(Array.isArray(data) ? data : []);
@@ -26,6 +29,23 @@ export default function DashboardPage(): ReactElement {
     };
 
     load();
+  }, []);
+
+  useEffect((): void => {
+    const load: () => void = async (): Promise<void> => {
+      try {
+        const data: Page[] = await pageService.getAllPages();
+        setPages(Array.isArray(data) ? data : []);
+      } catch {
+        setError(
+          "Could not load users from the backend. Check the API server and MongoDB connection.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load()
   }, []);
 
   return (
@@ -78,11 +98,21 @@ export default function DashboardPage(): ReactElement {
             <h3>Recent pages</h3>
           </div>
           <div className="empty-state">
-            <p>No recent pages yet.</p>
-            <span>
-              Add page routes and a pages collection to replace this
-              placeholder.
-            </span>
+            <div className="list-stack">
+              {pages.map(
+                (item: Page, index: number): ReactElement => (
+                  <div key={`${item._id}-${index}`} className="list-row">
+                    <div className="avatar-circle">
+                      {item.title?.[0] || "P"}
+                    </div>
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p>{new Date(item.lastUpdate).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
           </div>
         </article>
       </div>

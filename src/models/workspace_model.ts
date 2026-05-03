@@ -39,6 +39,20 @@ export async function getWorkspace(
   return WorkspaceDocument;
 }
 
+export async function getWorkspacesByOwner(userId: string): Promise<Workspace[]> {
+  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>("Workspaces");
+  return Workspaces.find({ owner: new Types.ObjectId(userId) }).toArray();
+}
+
+export async function isWorkspaceOwnedByUser(workspaceId: string, userId: string): Promise<boolean> {
+  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>("Workspaces");
+  const workspace = await Workspaces.findOne({
+    _id: new Types.ObjectId(workspaceId),
+    owner: new Types.ObjectId(userId),
+  } as Filter<Workspace>);
+  return workspace !== null;
+}
+
 export async function getAllWorkspaces(): Promise<Workspace[]> {
   const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
     "Workspaces",
