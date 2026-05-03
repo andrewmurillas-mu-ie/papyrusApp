@@ -12,7 +12,15 @@ router.get("/github/callback", passport_js_1.default.authenticate("github", {
     session: false,
     failureRedirect: "/auth/failure",
 }), (req, res) => {
-    const token = jsonwebtoken_1.default.sign(req.user, process.env.JWT_SECRET, {
+    const user = req.user;
+    const payload = {
+        id: user._id,
+        fullName: user.fullName,
+        githubId: user.githubId,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+    };
+    const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET, {
         expiresIn: "7d",
     });
     res.json({ token });
