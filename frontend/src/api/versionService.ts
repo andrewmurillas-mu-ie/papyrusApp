@@ -2,7 +2,7 @@ import { api } from "./client.ts";
 import Version from "../backend_objects/Version.ts";
 
 const versionService = {
-  getAllVersions: async (): Promise<Version[]> => {
+  getAll: async (): Promise<Version[]> => {
     const { data } = await api.get("/version");
     return data;
   },

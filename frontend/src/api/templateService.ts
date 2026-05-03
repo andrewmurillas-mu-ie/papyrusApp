@@ -2,7 +2,7 @@ import { api } from "./client.ts";
 import Template from "../backend_objects/Template.ts";
 
 const templateService = {
-  getAllTemplates: async (): Promise<Template[]> => {
+  getAll: async (): Promise<Template[]> => {
     const { data } = await api.get("/template");
     return data;
   },

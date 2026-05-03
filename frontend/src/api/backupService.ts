@@ -2,7 +2,7 @@ import { api } from "./client.ts";
 import Backup from "../backend_objects/Beckup.ts";
 
 const backupService = {
-  getAllBackups: async (): Promise<Backup[]> => {
+  getAll: async (): Promise<Backup[]> => {
     const { data } = await api.get("/backup");
     return data;
   },

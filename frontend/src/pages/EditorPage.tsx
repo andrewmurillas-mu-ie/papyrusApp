@@ -1,7 +1,30 @@
-import InfoBanner from '../components/InfoBanner';
-import {ReactElement} from "react";
+import InfoBanner from "../components/InfoBanner";
+import { ReactElement, useEffect, useState } from "react";
+import Page from "../backend_objects/Page.ts";
+import pageService from "../api/pageService.ts";
 
 export default function EditorPage(): ReactElement {
+  const [pages, setPages] = useState<Page[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect((): void => {
+    const load: () => void = async (): Promise<void> => {
+      try {
+        const data: Page[] = await pageService.getAll();
+        setPages(Array.isArray(data) ? data : []);
+      } catch {
+        setError(
+          "Could not load users from the backend. Check the API server and MongoDB connection.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
   return (
     <section className="page-stack">
       <div className="hero-card">
@@ -48,8 +71,8 @@ export default function EditorPage(): ReactElement {
         >
           <h3>Heading block</h3>
           <p>
-            Start writing here. This editable area is only a frontend placeholder
-            for now.
+            Start writing here. This editable area is only a frontend
+            placeholder for now.
           </p>
           <ul>
             <li>Checklist block placeholder</li>

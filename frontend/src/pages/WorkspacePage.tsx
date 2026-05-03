@@ -1,18 +1,36 @@
 import React, { ReactElement, useEffect, useState } from "react";
-import useAuth from "../context/AuthContext.tsx";
 import Page from "../backend_objects/Page.ts";
 import pageService from "../api/pageService.ts";
+import workspaceService from "../api/workspaceService.ts";
+import Workspace from "../backend_objects/Workspace.ts";
 
 export default function WorkspacePage(): ReactElement {
-  const { user } = useAuth();
   const [pages, setPages] = useState<Page[]>([]);
+  const [workspaces, setWorkspace] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect((): void => {
     const load: () => void = async (): Promise<void> => {
       try {
-        const data: Page[] = await pageService.getAllPages();
+        const data: Workspace[] = await workspaceService.getAll();
+        setWorkspace(Array.isArray(data) ? data : []);
+      } catch {
+        setError(
+          "Could not load workspaces from the backend. Check the API server and MongoDB connection.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  useEffect((): void => {
+    const load: () => void = async (): Promise<void> => {
+      try {
+        const data: Page[] = await pageService.getAll();
         setPages(Array.isArray(data) ? data : []);
       } catch {
         setError(

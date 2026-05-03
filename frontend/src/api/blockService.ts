@@ -2,7 +2,7 @@ import { api } from "./client.ts";
 import Block from "../backend_objects/Block.ts";
 
 const blockService = {
-  getAllBlocks: async (): Promise<Block[]> => {
+  getAll: async (): Promise<Block[]> => {
     const { data } = await api.get("/block");
     return data;
   },

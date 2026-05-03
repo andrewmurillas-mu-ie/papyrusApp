@@ -1,8 +1,10 @@
 import mongoose, { Model, Schema, Types } from "mongoose";
 
+type ObjectId = Types.ObjectId;
+
 export default interface Backup {
-  user: Types.ObjectId;
-  workspace: Types.ObjectId;
+  user: ObjectId;
+  workspace: ObjectId;
   format: "json" | "markdown" | "csv";
   data: unknown;
   createdAt: Date;
@@ -18,7 +20,10 @@ const BackupSchema = new Schema<Backup>({
   lastUpdated: { type: Date, default: Date.now },
 });
 
-const BackupModel: Model<Backup> = mongoose.model<Backup>("Backup", BackupSchema);
+const BackupModel: Model<Backup> = mongoose.model<Backup>(
+  "Backup",
+  BackupSchema,
+);
 
 export async function getBackup(backupId: string): Promise<Backup | null> {
   return BackupModel.findById(backupId);

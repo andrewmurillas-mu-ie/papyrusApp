@@ -2,9 +2,14 @@ import React, { ChangeEvent, ReactElement, useEffect, useState } from "react";
 import userService from "../api/userService";
 import useAuth from "../context/AuthContext.tsx";
 import InfoBanner from "../components/InfoBanner";
+import backupService from "../api/backupService.ts";
+import Backup from "../backend_objects/Beckup.ts";
 
 export default function SettingsPage(): ReactElement {
   const { user, setUser } = useAuth();
+  const [backups, setBackups] = useState<Backup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -40,6 +45,23 @@ export default function SettingsPage(): ReactElement {
       );
     }
   }, [user]);
+
+  useEffect((): void => {
+    const load: () => void = async (): Promise<void> => {
+      try {
+        const data: Backup[] = await backupService.getAll();
+        setBackups(Array.isArray(data) ? data : []);
+      } catch {
+        setError(
+          "Could not load workspaces from the backend. Check the API server and MongoDB connection.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
 
   const onSubmit: (e: {
     preventDefault: () => void;

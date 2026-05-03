@@ -2,7 +2,7 @@ import { api } from "./client.ts";
 import User from "../backend_objects/User.ts";
 
 const userService = {
-  getAllUsers: async (): Promise<User[]> => {
+  getAll: async (): Promise<User[]> => {
     const { data } = await api.get("/user");
     return data;
   },

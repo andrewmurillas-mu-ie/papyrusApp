@@ -1,7 +1,9 @@
 import mongoose, { Model, Schema, Types } from "mongoose";
 
+type ObjectId = Types.ObjectId;
+
 export default interface Block {
-  page: Types.ObjectId;
+  page: ObjectId;
   type: "heading" | "text" | "checklist" | "table" | "image";
   content: Record<string, unknown>;
   order: number;
@@ -11,7 +13,11 @@ export default interface Block {
 
 const BlockSchema = new Schema<Block>({
   page: { type: Schema.Types.ObjectId, ref: "Page", required: true },
-  type: { type: String, enum: ["heading", "text", "checklist", "table", "image"], required: true },
+  type: {
+    type: String,
+    enum: ["heading", "text", "checklist", "table", "image"],
+    required: true,
+  },
   content: { type: Schema.Types.Mixed, required: true },
   order: { type: Number, required: true },
   createdAt: { type: Date, default: Date.now },
@@ -28,7 +34,10 @@ export async function createBlock(block: Block): Promise<Block> {
   return BlockModel.create(block);
 }
 
-export async function updateBlock(blockId: string, block: Partial<Block>): Promise<void> {
+export async function updateBlock(
+  blockId: string,
+  block: Partial<Block>,
+): Promise<void> {
   await BlockModel.findByIdAndUpdate(blockId, block);
 }
 

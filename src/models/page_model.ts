@@ -1,11 +1,13 @@
 import mongoose, { Model, Schema, Types } from "mongoose";
 import WorkspaceModel from "./workspace_model";
 
+type ObjectId = Types.ObjectId;
+
 export default interface Page {
   title: string;
-  workspace: Types.ObjectId;
-  createdBy: Types.ObjectId;
-  blocks: Types.ObjectId[];
+  workspace: ObjectId;
+  createdBy: ObjectId;
+  blocks: ObjectId[];
   isShared: boolean;
   currentVersion: number;
   createdAt: Date;
@@ -29,7 +31,9 @@ export async function getPage(pageId: string): Promise<Page | null> {
   return PageModel.findById(pageId);
 }
 
-export async function getPagesByUserWorkspaces(userId: string): Promise<Page[]> {
+export async function getPagesByUserWorkspaces(
+  userId: string,
+): Promise<Page[]> {
   const userObjectId = new Types.ObjectId(userId);
   const userWorkspaces = await WorkspaceModel.find(
     { $or: [{ owner: userObjectId }, { "members.user": userObjectId }] },
@@ -39,7 +43,10 @@ export async function getPagesByUserWorkspaces(userId: string): Promise<Page[]> 
   return PageModel.find({ workspace: { $in: workspaceIds } });
 }
 
-export async function isPageOwnedByUser(pageId: string, userId: string): Promise<boolean> {
+export async function isPageOwnedByUser(
+  pageId: string,
+  userId: string,
+): Promise<boolean> {
   const page = await PageModel.findById(pageId, { workspace: 1 });
   if (!page) return false;
   const workspace = await WorkspaceModel.findOne({
@@ -57,7 +64,10 @@ export async function createPage(page: Page): Promise<Page> {
   return PageModel.create(page);
 }
 
-export async function updatePage(pageId: string, page: Partial<Page>): Promise<void> {
+export async function updatePage(
+  pageId: string,
+  page: Partial<Page>,
+): Promise<void> {
   await PageModel.findByIdAndUpdate(pageId, page);
 }
 

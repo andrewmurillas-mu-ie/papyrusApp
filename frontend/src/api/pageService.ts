@@ -2,7 +2,7 @@ import { api } from "./client.ts";
 import Page from "../backend_objects/Page.ts";
 
 const pageService = {
-  getAllPages: async (): Promise<Page[]> => {
+  getAll: async (): Promise<Page[]> => {
     const { data } = await api.get("/page");
     return data;
   },
