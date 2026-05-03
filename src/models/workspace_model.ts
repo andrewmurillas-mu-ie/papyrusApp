@@ -1,12 +1,8 @@
-import { db } from "../index";
-import { Collection, Filter, WithId } from "mongodb";
-import { Types } from "mongoose";
-
-type ObjectId = Types.ObjectId;
+import mongoose, { Model, Schema, Types } from "mongoose";
 
 export interface Workspace {
   name: string;
-  owner: ObjectId;
+  owner: Types.ObjectId;
   members: Array<{
     user: Types.ObjectId;
     permission: "owner" | "editor" | "viewer";
@@ -15,77 +11,66 @@ export interface Workspace {
   lastUpdated: Date;
 }
 
-function isWorkspace(
-  doc: WithId<Workspace> | null,
-): doc is WithId<Workspace> & Workspace {
-  if (!doc) return false;
-  return (
-    "name" in doc && "owner" in doc && "members" in doc && "lastUpdated" in doc
-  );
-}
+const WorkspaceSchema = new Schema<Workspace>({
+  name: { type: String, required: true },
+  owner: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  members: [
+    {
+      user: { type: Schema.Types.ObjectId, ref: "User" },
+      permission: { type: String, enum: ["owner", "editor", "viewer"] },
+    },
+  ],
+  createdAt: { type: Date, default: Date.now },
+  lastUpdated: { type: Date, default: Date.now },
+});
+
+const WorkspaceModel: Model<Workspace> = mongoose.model<Workspace>(
+  "Workspace",
+  WorkspaceSchema,
+);
+
+export default WorkspaceModel;
 
 export async function getWorkspace(
-  WorkspaceId: string,
+  workspaceId: string,
 ): Promise<Workspace | null> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
-    "Workspaces",
-  );
-  const query: Filter<Workspace> = {
-    _id: new Types.ObjectId(WorkspaceId),
-  } as Filter<Workspace>;
-  const WorkspaceDocument: WithId<Workspace> | any =
-    await Workspaces.findOne(query);
-  if (!isWorkspace(WorkspaceDocument)) return null;
-  return WorkspaceDocument;
+  return WorkspaceModel.findById(workspaceId);
 }
 
-export async function getWorkspacesByOwner(userId: string): Promise<Workspace[]> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>("Workspaces");
-  return Workspaces.find({ owner: new Types.ObjectId(userId) }).toArray();
+export async function getWorkspacesByOwner(
+  userId: string,
+): Promise<Workspace[]> {
+  return WorkspaceModel.find({ owner: new Types.ObjectId(userId) });
 }
 
-export async function isWorkspaceOwnedByUser(workspaceId: string, userId: string): Promise<boolean> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>("Workspaces");
-  const workspace = await Workspaces.findOne({
+export async function isWorkspaceOwnedByUser(
+  workspaceId: string,
+  userId: string,
+): Promise<boolean> {
+  const workspace = await WorkspaceModel.findOne({
     _id: new Types.ObjectId(workspaceId),
     owner: new Types.ObjectId(userId),
-  } as Filter<Workspace>);
+  });
   return workspace !== null;
 }
 
 export async function getAllWorkspaces(): Promise<Workspace[]> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
-    "Workspaces",
-  );
-  return Workspaces.find().toArray();
+  return WorkspaceModel.find();
 }
 
 export async function createWorkspace(
-  Workspace: Workspace,
+  workspace: Workspace,
 ): Promise<Workspace> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
-    "Workspaces",
-  );
-  await Workspaces.insertOne(Workspace);
-  return Workspace;
+  return WorkspaceModel.create(workspace);
 }
 
 export async function updateWorkspace(
-  WorkspaceId: string,
-  Workspace: Workspace,
+  workspaceId: string,
+  workspace: Partial<Workspace>,
 ): Promise<void> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
-    "Workspaces",
-  );
-  await Workspaces.updateOne(
-    { _id: new Types.ObjectId(WorkspaceId) },
-    { $set: Workspace },
-  );
+  await WorkspaceModel.findByIdAndUpdate(workspaceId, workspace);
 }
 
-export async function deleteWorkspace(WorkspaceId: string): Promise<void> {
-  const Workspaces: Collection<Workspace> = (await db).collection<Workspace>(
-    "Workspaces",
-  );
-  await Workspaces.deleteOne({ _id: new Types.ObjectId(WorkspaceId) });
+export async function deleteWorkspace(workspaceId: string): Promise<void> {
+  await WorkspaceModel.findByIdAndDelete(workspaceId);
 }

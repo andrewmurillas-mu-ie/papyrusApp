@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUser = getUser;
 exports.getAllUsers = getAllUsers;
@@ -6,43 +39,32 @@ exports.createUser = createUser;
 exports.getUserByGithubId = getUserByGithubId;
 exports.updateUser = updateUser;
 exports.deleteUser = deleteUser;
-const index_1 = require("../index");
-const mongoose_1 = require("mongoose");
-function isUser(doc) {
-    if (!doc)
-        return false;
-    return ("fullName" in doc &&
-        "githubId" in doc &&
-        "avatarUrl" in doc &&
-        "createdAt" in doc &&
-        "updatedAt" in doc);
-}
+const mongoose_1 = __importStar(require("mongoose"));
+const UserSchema = new mongoose_1.Schema({
+    fullName: { type: String, required: true },
+    githubId: { type: String, required: true, unique: true },
+    passwordHash: { type: String },
+    role: { type: String, enum: ["admin", "user"], default: "user" },
+    avatarUrl: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+const UserModel = mongoose_1.default.model("User", UserSchema);
 async function getUser(userId) {
-    const users = (await index_1.db).collection("users");
-    const query = { _id: new mongoose_1.Types.ObjectId(userId) };
-    const userDocument = await users.findOne(query);
-    if (!isUser(userDocument))
-        return null;
-    return userDocument;
+    return UserModel.findById(userId);
 }
 async function getAllUsers() {
-    const users = (await index_1.db).collection("users");
-    return users.find().toArray();
+    return UserModel.find();
 }
 async function createUser(user) {
-    const users = (await index_1.db).collection("users");
-    await users.insertOne(user);
-    return user;
+    return UserModel.create(user);
 }
 async function getUserByGithubId(githubId) {
-    const users = (await index_1.db).collection("users");
-    return users.findOne({ githubId });
+    return UserModel.findOne({ githubId });
 }
 async function updateUser(userId, user) {
-    const users = (await index_1.db).collection("users");
-    await users.updateOne({ _id: new mongoose_1.Types.ObjectId(userId) }, { $set: user });
+    await UserModel.findByIdAndUpdate(userId, user);
 }
 async function deleteUser(userId) {
-    const users = (await index_1.db).collection("users");
-    await users.deleteOne({ _id: new mongoose_1.Types.ObjectId(userId) });
+    await UserModel.findByIdAndDelete(userId);
 }

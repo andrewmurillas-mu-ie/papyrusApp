@@ -1,77 +1,48 @@
-import { db } from "../index";
-import { Collection, Filter, WithId } from "mongodb";
-import { Types } from "mongoose";
-
-type ObjectId = Types.ObjectId;
+import mongoose, { Model, Schema, Types } from "mongoose";
+import WorkspaceModel from "./workspace_model";
 
 export default interface Page {
   title: string;
-  workspace: ObjectId;
-  createdBy: ObjectId;
-  blocks: ObjectId[];
+  workspace: Types.ObjectId;
+  createdBy: Types.ObjectId;
+  blocks: Types.ObjectId[];
   isShared: boolean;
   currentVersion: number;
   createdAt: Date;
   lastUpdate: Date;
 }
 
-function isPage(doc: WithId<Page> | null): doc is WithId<Page> & Page {
-  if (!doc) return false;
-  return (
-    "title" in doc &&
-    "workspace" in doc &&
-    "createdBy" in doc &&
-    "blocks" in doc &&
-    "isShared" in doc &&
-    "currentVersion" in doc &&
-    "createdAt" in doc &&
-    "lastUpdate" in doc
-  );
-}
+const PageSchema = new Schema<Page>({
+  title: { type: String, required: true },
+  workspace: { type: Schema.Types.ObjectId, ref: "Workspace", required: true },
+  createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  blocks: [{ type: Schema.Types.ObjectId, ref: "Block" }],
+  isShared: { type: Boolean, default: false },
+  currentVersion: { type: Number, default: 1 },
+  createdAt: { type: Date, default: Date.now },
+  lastUpdate: { type: Date, default: Date.now },
+});
+
+const PageModel: Model<Page> = mongoose.model<Page>("Page", PageSchema);
 
 export async function getPage(pageId: string): Promise<Page | null> {
-  const pages: Collection<Page> = (await db).collection<Page>("pages");
-  const query: Filter<Page> = {
-    _id: new Types.ObjectId(pageId),
-  } as Filter<Page>;
-  const pageDocument: WithId<Page> | any = await pages.findOne(query);
-  if (!isPage(pageDocument)) return null;
-  return pageDocument;
+  return PageModel.findById(pageId);
 }
 
-export async function getPagesByUserWorkspaces(
-  userId: string,
-): Promise<Page[]> {
-  const workspaces: Collection<Document> = (await db).collection("Workspaces");
+export async function getPagesByUserWorkspaces(userId: string): Promise<Page[]> {
   const userObjectId = new Types.ObjectId(userId);
-  const userWorkspaces: WithId<Document>[] = await workspaces
-    .find(
-      { $or: [{ owner: userObjectId }, { "members.user": userObjectId }] },
-      { projection: { _id: 1 } },
-    )
-    .toArray();
-
-  const workspaceIds: ObjectId[] = userWorkspaces.map(
-    (w: WithId<Document>): ObjectId => w._id,
+  const userWorkspaces = await WorkspaceModel.find(
+    { $or: [{ owner: userObjectId }, { "members.user": userObjectId }] },
+    { _id: 1 },
   );
-
-  const pages: Collection<Page> = (await db).collection<Page>("pages");
-  return pages.find({ workspace: { $in: workspaceIds } }).toArray();
+  const workspaceIds = userWorkspaces.map((w) => w._id);
+  return PageModel.find({ workspace: { $in: workspaceIds } });
 }
 
-export async function isPageOwnedByUser(
-  pageId: string,
-  userId: string,
-): Promise<boolean> {
-  const pages: Collection<Page> = (await db).collection<Page>("pages");
-  const page: WithId<Page> | null = await pages.findOne(
-    { _id: new Types.ObjectId(pageId) } as Filter<Page>,
-    { projection: { workspace: 1 } },
-  );
+export async function isPageOwnedByUser(pageId: string, userId: string): Promise<boolean> {
+  const page = await PageModel.findById(pageId, { workspace: 1 });
   if (!page) return false;
-
-  const workspaces: Collection<Document> = (await db).collection("Workspaces");
-  const workspace: WithId<Document> | null = await workspaces.findOne({
+  const workspace = await WorkspaceModel.findOne({
     _id: page.workspace,
     owner: new Types.ObjectId(userId),
   });
@@ -79,22 +50,17 @@ export async function isPageOwnedByUser(
 }
 
 export async function getAllPages(): Promise<Page[]> {
-  const pages: Collection<Page> = (await db).collection<Page>("pages");
-  return pages.find().toArray();
+  return PageModel.find();
 }
 
 export async function createPage(page: Page): Promise<Page> {
-  const pages: Collection<Page> = (await db).collection<Page>("pages");
-  await pages.insertOne(page);
-  return page;
+  return PageModel.create(page);
 }
 
-export async function updatePage(pageId: string, page: Page): Promise<void> {
-  const pages: Collection<Page> = (await db).collection<Page>("pages");
-  await pages.updateOne({ _id: new Types.ObjectId(pageId) }, { $set: page });
+export async function updatePage(pageId: string, page: Partial<Page>): Promise<void> {
+  await PageModel.findByIdAndUpdate(pageId, page);
 }
 
 export async function deletePage(pageId: string): Promise<void> {
-  const pages: Collection<Page> = (await db).collection<Page>("pages");
-  await pages.deleteOne({ _id: new Types.ObjectId(pageId) });
+  await PageModel.findByIdAndDelete(pageId);
 }

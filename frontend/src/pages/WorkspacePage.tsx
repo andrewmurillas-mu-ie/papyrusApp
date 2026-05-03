@@ -1,4 +1,3 @@
-import InfoBanner from "../components/InfoBanner";
 import React, { ReactElement, useEffect, useState } from "react";
 import useAuth from "../context/AuthContext.tsx";
 import Page from "../backend_objects/Page.ts";

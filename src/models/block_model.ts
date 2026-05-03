@@ -1,11 +1,7 @@
-import { db } from "../index";
-import { Collection, Filter, WithId } from "mongodb";
-import { Types } from "mongoose";
-
-type ObjectId = Types.ObjectId;
+import mongoose, { Model, Schema, Types } from "mongoose";
 
 export default interface Block {
-  page: ObjectId;
+  page: Types.ObjectId;
   type: "heading" | "text" | "checklist" | "table" | "image";
   content: Record<string, unknown>;
   order: number;
@@ -13,43 +9,29 @@ export default interface Block {
   lastUpdated: Date;
 }
 
-function isBlock(doc: WithId<Block> | null): doc is WithId<Block> & Block {
-  if (!doc) return false;
-  return (
-    "page" in doc &&
-    "type" in doc &&
-    "content" in doc &&
-    "order" in doc &&
-    "createdAt" in doc &&
-    "lastUpdated" in doc
-  );
-}
+const BlockSchema = new Schema<Block>({
+  page: { type: Schema.Types.ObjectId, ref: "Page", required: true },
+  type: { type: String, enum: ["heading", "text", "checklist", "table", "image"], required: true },
+  content: { type: Schema.Types.Mixed, required: true },
+  order: { type: Number, required: true },
+  createdAt: { type: Date, default: Date.now },
+  lastUpdated: { type: Date, default: Date.now },
+});
+
+const BlockModel: Model<Block> = mongoose.model<Block>("Block", BlockSchema);
 
 export async function getBlock(blockId: string): Promise<Block | null> {
-  const blocks: Collection<Block> = (await db).collection<Block>("Blocks");
-  const query: Filter<Block> = {
-    _id: new Types.ObjectId(blockId),
-  } as Filter<Block>;
-  const blockDocument: WithId<Block> | any = await blocks.findOne(query);
-  if (!isBlock(blockDocument)) return null;
-  return blockDocument;
+  return BlockModel.findById(blockId);
 }
 
-export async function createBlock(Block: Block): Promise<Block> {
-  const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
-  await Blocks.insertOne(Block);
-  return Block;
+export async function createBlock(block: Block): Promise<Block> {
+  return BlockModel.create(block);
 }
 
-export async function updateBlock(
-  BlockId: string,
-  Block: Block,
-): Promise<void> {
-  const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
-  await Blocks.updateOne({ _id: new Types.ObjectId(BlockId) }, { $set: Block });
+export async function updateBlock(blockId: string, block: Partial<Block>): Promise<void> {
+  await BlockModel.findByIdAndUpdate(blockId, block);
 }
 
-export async function deleteBlock(BlockId: string): Promise<void> {
-  const Blocks: Collection<Block> = (await db).collection<Block>("Blocks");
-  await Blocks.deleteOne({ _id: new Types.ObjectId(BlockId) });
+export async function deleteBlock(blockId: string): Promise<void> {
+  await BlockModel.findByIdAndDelete(blockId);
 }

@@ -1,6 +1,6 @@
 import express, { Application } from "express";
 import cors from "cors";
-import { Db, MongoClient } from "mongodb";
+import mongoose, { Connection } from "mongoose";
 import { connect } from "./mongo-controller";
 import userRouter from "./routes/user_routes";
 import authRouter from "./routes/auth_routes";
@@ -17,10 +17,7 @@ app.use("/auth", authRouter);
 app.use("/", userRouter);
 app.use("/", pageRouter);
 app.use("/", workspaceRouter);
-
-const client: Promise<MongoClient> = connect();
-export const db: Promise<Db> = client.then((c) => c.db("papyrus"));
-
+connect().then((): Connection => mongoose.connection);
 app.listen(PORT, (): void => {
   console.log(`Server running on port ${PORT}`);
 });
