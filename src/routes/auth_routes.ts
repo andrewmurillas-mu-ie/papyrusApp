@@ -17,7 +17,15 @@ router.get(
     failureRedirect: "/auth/failure",
   }),
   (req: Request, res: Response): void => {
-    const token: string = jwt.sign(req.user as User, process.env.JWT_SECRET!, {
+    const user = req.user as User & { _id: string };
+    const payload = {
+      id: user._id,
+      fullName: user.fullName,
+      githubId: user.githubId,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+    };
+    const token: string = jwt.sign(payload, process.env.JWT_SECRET!, {
       expiresIn: "7d",
     });
     res.json({ token });
