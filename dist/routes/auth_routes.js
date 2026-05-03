@@ -23,7 +23,7 @@ router.get("/github/callback", passport_1.default.authenticate("github", {
     const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET, {
         expiresIn: "7d",
     });
-    res.json({ token });
+    res.redirect(`http://localhost:5173/auth/github/callback?token=${token}`);
 });
 router.get("/failure", (_req, res) => {
     res.status(401).json({ error: "GitHub authentication failed" });

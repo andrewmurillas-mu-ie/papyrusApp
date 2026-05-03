@@ -28,7 +28,7 @@ router.get(
     const token: string = jwt.sign(payload, process.env.JWT_SECRET!, {
       expiresIn: "7d",
     });
-    res.json({ token });
+    res.redirect(`http://localhost:5173/auth/github/callback?token=${token}`);
   },
 );
 
