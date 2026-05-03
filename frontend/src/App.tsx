@@ -1,24 +1,22 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute.tsx";
-import AppLayout from "./layout/AppLayout.tsx";
+import React from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
+import AppLayout from './layout/AppLayout';
 
-import LoginPage from "./pages/LoginPage.tsx";
-import RegisterPage from "./pages/RegisterPage.tsx";
-import GithubCallbackPage from "./pages/GithubCallbackPage.tsx";
-import DashboardPage from "./pages/DashboardPage.tsx";
-import WorkspacePage from "./pages/WorkspacePage.tsx";
-import EditorPage from "./pages/EditorPage.tsx";
-import TemplatesPage from "./pages/TemplatesPage.tsx";
-import SettingsPage from "./pages/SettingsPage.tsx";
-import { ReactElement } from "react";
+import LoginPage from './pages/LoginPage';
+import GithubCallbackPage from './pages/GithubCallbackPage';
+import DashboardPage from './pages/DashboardPage';
+import WorkspacePage from './pages/WorkspacePage';
+import EditorPage from './pages/EditorPage';
+import TemplatesPage from './pages/TemplatesPage';
+import SettingsPage from './pages/SettingsPage';
 
-export default function App(): ReactElement {
+export default function App(): React.ReactElement {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/auth/callback" element={<GithubCallbackPage />} />
-
+      <Route path="/github/callback" element={<GithubCallbackPage />} />
+      
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />

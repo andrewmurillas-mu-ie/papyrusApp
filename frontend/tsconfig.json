@@ -10,7 +10,10 @@
     "esModuleInterop": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force"
   },
   "include": ["src", "vite.config.ts"]
 }

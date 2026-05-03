@@ -1,31 +1,44 @@
-import { ReactElement, useEffect } from "react";
-import {
-  NavigateFunction,
-  useNavigate,
-  useSearchParams,
-} from "react-router-dom";
-import useAuth from "../context/AuthContext.tsx";
+import { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-export default function GithubCallbackPage(): ReactElement {
-  const [params] = useSearchParams();
-  const { loginWithToken } = useAuth();
-  const navigate: NavigateFunction = useNavigate();
+export default function GithubCallbackPage(): React.ReactElement {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { loginWithGithubToken } = useAuth();
 
-  useEffect((): void => {
-    const token: string | null = params.get("token");
-    if (token) {
-      loginWithToken(token);
-      navigate("/dashboard", { replace: true });
-    } else {
-      navigate("/login?error=github_failed", { replace: true });
-    }
-  }, []);
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const token = params.get('token');
+        console.log('[GithubCallback] token from query:', token);
 
-  return (
-    <div className="auth-shell">
-      <section className="auth-card">
-        <p className="muted">Completing GitHub sign-in…</p>
-      </section>
-    </div>
-  );
+        if (!token) {
+            console.log('[GithubCallback] No token, going to /login');
+            navigate('/login');
+            return;
+        }
+
+        const result = loginWithGithubToken(token);
+        console.log('[GithubCallback] loginWithGithubToken result:', result);
+
+        if (result.ok) {
+            console.log('[GithubCallback] Success, navigating to /dashboard');
+            navigate('/dashboard');
+        } else {
+            console.log('[GithubCallback] Failed, navigating to /login');
+            navigate('/login');
+        }
+    }, []);
+
+    return (
+        <div className="auth-shell">
+            <section className="auth-card">
+                <p className="eyebrow">Papyrus</p>
+                <h1>Signing you in...</h1>
+                <p className="muted">
+                    Completing GitHub login. You will be redirected in a moment.
+                </p>
+            </section>
+        </div>
+    );
 }
