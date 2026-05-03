@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import InfoBanner from '../components/InfoBanner';
 import { useAuth } from '../context/AuthContext';
 import RichTextEditor from '../components/RichTextEditor';
+import { requestGrammarAssistance } from '../api/aiService';
 
 function getInitialContent(template) {
   switch (template) {
@@ -44,6 +45,9 @@ export default function EditorPage() {
   const [title, setTitle] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [lastSaved, setLastSaved] = useState('');
+  const [grammarLoading, setGrammarLoading] = useState(false);
+  const [grammarResult, setGrammarResult] = useState(null);
+  const [grammarError, setGrammarError] = useState('');
 
   // holds a function we can call to get current HTML from Tiptap
   const getEditorHtmlRef = useRef(null);
@@ -93,6 +97,38 @@ export default function EditorPage() {
     return () => clearInterval(interval);
   }, [title, storageKey]);
 
+  const handleGrammarAssist = async () => {
+    const getHtml = getEditorHtmlRef.current;
+
+    if (!getHtml) {
+      setGrammarError('Editor is not ready yet. Please try again.');
+      return;
+    }
+
+    const currentHtml = getHtml();
+
+    if (!currentHtml || currentHtml.trim() === '<p></p>') {
+      setGrammarError('Please write some text before using grammar assistance.');
+      return;
+    }
+
+    setGrammarLoading(true);
+    setGrammarError('');
+    setGrammarResult(null);
+
+    try {
+      const result = await requestGrammarAssistance(currentHtml);
+      setGrammarResult(result);
+    } catch (error) {
+      setGrammarError(
+        error.response?.data?.error ||
+          'Grammar assistance failed. Please check the backend terminal.',
+      );
+    } finally {
+      setGrammarLoading(false);
+    }
+  };
+
   const formattedLastSaved = lastSaved
     ? new Date(lastSaved).toLocaleTimeString('en-GB', {
         hour: '2-digit',
@@ -113,8 +149,13 @@ export default function EditorPage() {
         </div>
 
         <div className="quick-actions quick-actions--right">
-          <button className="secondary-button" disabled>
-            AI summary
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handleGrammarAssist}
+            disabled={grammarLoading}
+          >
+            {grammarLoading ? 'Checking grammar...' : 'Grammar Assist'}
           </button>
           <button className="secondary-button" disabled>
             Version history
@@ -147,6 +188,48 @@ export default function EditorPage() {
             getEditorHtmlRef.current = getHtml;
           }}
         />
+
+        {grammarError && (
+          <div className="info-banner info-banner--warning">
+            {grammarError}
+          </div>
+        )}
+
+        {grammarResult && (
+          <div className="panel-card">
+            <h3>Grammar assistance result</h3>
+            <p className="muted">
+              Cache available: {grammarResult.cacheAvailable ? 'Yes' : 'No'} ·
+              Cached result: {grammarResult.cached ? 'Yes' : 'No'}
+            </p>
+
+            <label>
+              Corrected text
+              <textarea
+                readOnly
+                value={grammarResult.correctedText || ''}
+                rows={5}
+              />
+            </label>
+
+            {grammarResult.suggestions?.length > 0 && (
+              <div>
+                <h4>Suggestions</h4>
+                <ul>
+                  {grammarResult.suggestions.map((suggestion, index) => (
+                    <li key={`${suggestion.offset}-${index}`}>
+                      <strong>{suggestion.shortMessage || 'Suggestion'}:</strong>{' '}
+                      {suggestion.message}
+                      {suggestion.replacements?.length > 0
+                        ? ` Suggested: ${suggestion.replacements.join(', ')}`
+                        : ''}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="editor-footer">
           <span className="muted">Last saved: {formattedLastSaved}</span>

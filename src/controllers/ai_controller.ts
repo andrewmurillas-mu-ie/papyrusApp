@@ -106,7 +106,7 @@ export async function requestGrammarAssist(req: Request, res: Response): Promise
       return;
     }
 
-    const inputHash = hashText(text);
+    const inputHash = hashText(`grammar-v2:${text}`);
     const cacheAvailable = isMongooseConnected();
 
     if (cacheAvailable) {
