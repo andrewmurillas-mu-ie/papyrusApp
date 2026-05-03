@@ -1,13 +1,31 @@
-import InfoBanner from '../components/InfoBanner';
-import {ReactElement} from "react";
-
-const mockPages: {title: string, status: string}[] = [
-  { title: 'Quarterly planning', status: 'Updated 2h ago' },
-  { title: 'Research notes', status: 'Draft' },
-  { title: 'Client checklist', status: 'Shared' },
-];
+import React, { ReactElement, useEffect, useState } from "react";
+import useAuth from "../context/AuthContext.tsx";
+import Page from "../backend_objects/Page.ts";
+import pageService from "../api/pageService.ts";
 
 export default function WorkspacePage(): ReactElement {
+  const { user } = useAuth();
+  const [pages, setPages] = useState<Page[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect((): void => {
+    const load: () => void = async (): Promise<void> => {
+      try {
+        const data: Page[] = await pageService.getAllPages();
+        setPages(Array.isArray(data) ? data : []);
+      } catch {
+        setError(
+          "Could not load users from the backend. Check the API server and MongoDB connection.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
   return (
     <section className="page-stack">
       <div className="hero-card">
@@ -22,26 +40,23 @@ export default function WorkspacePage(): ReactElement {
         </div>
       </div>
 
-      <InfoBanner
-        title="Backend needed for full workspace mode"
-        tone="warning"
-      >
-        Add workspace routes, a workspace model, membership data, and workspace
-        page listing endpoints to replace these placeholders.
-      </InfoBanner>
-
       <div className="workspace-grid">
         <aside className="panel-card">
           <div className="panel-header">
             <h3>Pages</h3>
           </div>
           <div className="list-stack">
-            {mockPages.map((page: {title: string, status: string}): ReactElement => (
-              <button key={page.title} className="workspace-link">
-                <strong>{page.title}</strong>
-                <span>{page.status}</span>
-              </button>
-            ))}
+            {pages.map(
+              (item: Page, index: number): ReactElement => (
+                <div key={`${item._id}-${index}`} className="list-row">
+                  <div className="avatar-circle">{item.title?.[0] || "P"}</div>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>{new Date(item.lastUpdate).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              ),
+            )}
           </div>
         </aside>
 

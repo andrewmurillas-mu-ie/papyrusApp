@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import useAuth from "../context/AuthContext.tsx";
 
-export default function GitHubCallbackPage(): ReactElement {
+export default function GithubCallbackPage(): ReactElement {
   const [params] = useSearchParams();
   const { loginWithToken } = useAuth();
   const navigate: NavigateFunction = useNavigate();

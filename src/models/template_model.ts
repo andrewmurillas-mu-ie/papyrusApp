@@ -1,13 +1,9 @@
-import { db } from "../index";
-import { Collection, Filter, WithId } from "mongodb";
-import { Types } from "mongoose";
-
-type ObjectId = Types.ObjectId;
+import mongoose, { Model, Schema, Types } from "mongoose";
 
 export default interface Template {
   name: string;
   description: string;
-  createdBy: ObjectId;
+  createdBy: Types.ObjectId;
   blocks: Array<{
     type: string;
     content: Record<string, unknown>;
@@ -19,68 +15,41 @@ export default interface Template {
   lastUpdated: Date;
 }
 
-function isTemplate(
-  doc: WithId<Template> | null,
-): doc is WithId<Template> & Template {
-  if (!doc) return false;
-  return (
-    "name" in doc &&
-    "description" in doc &&
-    "createdBy" in doc &&
-    "blocks" in doc &&
-    "isPublic" in doc &&
-    "category" in doc &&
-    "createdAt" in doc &&
-    "lastUpdated" in doc
-  );
-}
+const TemplateSchema = new Schema<Template>({
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  blocks: [
+    {
+      type: { type: String, required: true },
+      content: { type: Schema.Types.Mixed, required: true },
+      order: { type: Number, required: true },
+    },
+  ],
+  isPublic: { type: Boolean, default: false },
+  category: { type: String, enum: ["to-do", "planner", "expense", "notes", "other"], required: true },
+  createdAt: { type: Date, default: Date.now },
+  lastUpdated: { type: Date, default: Date.now },
+});
 
-export async function getTemplate(
-  TemplateId: string,
-): Promise<Template | null> {
-  const Templates: Collection<Template> = (await db).collection<Template>(
-    "templates",
-  );
-  const query: Filter<Template> = {
-    _id: new Types.ObjectId(TemplateId),
-  } as Filter<Template>;
-  const TemplateDocument: WithId<Template> | any =
-    await Templates.findOne(query);
-  if (!isTemplate(TemplateDocument)) return null;
-  return TemplateDocument;
+const TemplateModel: Model<Template> = mongoose.model<Template>("Template", TemplateSchema);
+
+export async function getTemplate(templateId: string): Promise<Template | null> {
+  return TemplateModel.findById(templateId);
 }
 
 export async function getAllTemplates(): Promise<Template[]> {
-  const Templates: Collection<Template> = (await db).collection<Template>(
-    "Templates",
-  );
-  return Templates.find().toArray();
+  return TemplateModel.find();
 }
 
-export async function createTemplate(Template: Template): Promise<Template> {
-  const Templates: Collection<Template> = (await db).collection<Template>(
-    "Templates",
-  );
-  await Templates.insertOne(Template);
-  return Template;
+export async function createTemplate(template: Template): Promise<Template> {
+  return TemplateModel.create(template);
 }
 
-export async function updateTemplate(
-  TemplateId: string,
-  Template: Template,
-): Promise<void> {
-  const Templates: Collection<Template> = (await db).collection<Template>(
-    "Templates",
-  );
-  await Templates.updateOne(
-    { _id: new Types.ObjectId(TemplateId) },
-    { $set: Template },
-  );
+export async function updateTemplate(templateId: string, template: Partial<Template>): Promise<void> {
+  await TemplateModel.findByIdAndUpdate(templateId, template);
 }
 
-export async function deleteTemplate(TemplateId: string): Promise<void> {
-  const Templates: Collection<Template> = (await db).collection<Template>(
-    "Templates",
-  );
-  await Templates.deleteOne({ _id: new Types.ObjectId(TemplateId) });
+export async function deleteTemplate(templateId: string): Promise<void> {
+  await TemplateModel.findByIdAndDelete(templateId);
 }

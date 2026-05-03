@@ -1,6 +1,4 @@
-import { db } from "../index";
-import { Collection, Filter, WithId } from "mongodb";
-import { Types } from "mongoose";
+import mongoose, { Model, Schema } from "mongoose";
 
 export default interface User {
   fullName: string;
@@ -12,49 +10,38 @@ export default interface User {
   updatedAt: Date;
 }
 
-function isUser(doc: WithId<User> | null): doc is WithId<User> & User {
-  if (!doc) return false;
-  return (
-    "fullName" in doc &&
-    "githubId" in doc &&
-    "avatarUrl" in doc &&
-    "createdAt" in doc &&
-    "updatedAt" in doc
-  );
-}
+const UserSchema = new Schema<User>({
+  fullName: { type: String, required: true },
+  githubId: { type: String, required: true, unique: true },
+  passwordHash: { type: String },
+  role: { type: String, enum: ["admin", "user"], default: "user" },
+  avatarUrl: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+const UserModel: Model<User> = mongoose.model<User>("User", UserSchema);
 
 export async function getUser(userId: string): Promise<User | null> {
-  const users: Collection<User> = (await db).collection<User>("users");
-  const query: Filter<User> = { _id: new Types.ObjectId(userId) } as Filter<User>;
-  const userDocument: WithId<User> | any = await users.findOne(query);
-  if (!isUser(userDocument)) return null;
-  return userDocument;
+  return UserModel.findById(userId);
 }
 
 export async function getAllUsers(): Promise<User[]> {
-  const users: Collection<User> = (await db).collection<User>("users");
-  return users.find().toArray();
+  return UserModel.find();
 }
 
 export async function createUser(user: User): Promise<User> {
-  const users: Collection<User> = (await db).collection<User>("users");
-  await users.insertOne(user as any);
-  return user;
+  return UserModel.create(user);
 }
 
-export async function getUserByGithubId(
-  githubId: string,
-): Promise<User | null> {
-  const users: Collection<User> = (await db).collection<User>("users");
-  return users.findOne({ githubId } as Filter<User>);
+export async function getUserByGithubId(githubId: string): Promise<User | null> {
+  return UserModel.findOne({ githubId });
 }
 
-export async function updateUser(userId: string, user: User): Promise<void> {
-  const users: Collection<User> = (await db).collection<User>("users");
-  await users.updateOne({ _id: new Types.ObjectId(userId) }, { $set: user });
+export async function updateUser(userId: string, user: Partial<User>): Promise<void> {
+  await UserModel.findByIdAndUpdate(userId, user);
 }
 
 export async function deleteUser(userId: string): Promise<void> {
-  const users: Collection<User> = (await db).collection<User>("users");
-  await users.deleteOne({ _id: new Types.ObjectId(userId) });
+  await UserModel.findByIdAndDelete(userId);
 }

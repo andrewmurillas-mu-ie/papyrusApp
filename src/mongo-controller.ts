@@ -1,13 +1,8 @@
-import 'dotenv/config';
-import {MongoClient} from 'mongodb';
+import "dotenv/config";
+import mongoose from "mongoose";
 
 const uri: string = process.env.MONGO_URI!;
 
-const client = new MongoClient(uri);
-
-export async function connect(): Promise<MongoClient> {
-
-	await client.connect();
-
-	return client;
+export async function connect(): Promise<typeof mongoose> {
+  return mongoose.connect(process.env.MONGO_URI!);
 }
