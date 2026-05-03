@@ -12,7 +12,7 @@ export default function DashboardPage(): ReactElement {
   const [error, setError] = useState("");
 
   useEffect((): void => {
-    const load: () => void = async (): Promise<void> => {
+    const load: () => void = async () => {
       try {
         const data: User[] = await userService.getAllUsers();
         setUsers(Array.isArray(data) ? data : []);
