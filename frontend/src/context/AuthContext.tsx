@@ -94,18 +94,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // New: handle GitHub login using the JWT from backend
   const loginWithGithubToken = (token: string): { ok: boolean; mode?: string } => {
+    console.log('[AuthContext] Processing GitHub token:', token.substring(0, 50) + '...');
     const payload = decodeJwt(token);
+    console.log('[AuthContext] Decoded payload:', payload);
     if (!payload) {
+      console.log('[AuthContext] Failed to decode token');
       return { ok: false };
     }
 
     const githubUser: User = {
-      id: payload._id || payload.id || payload.userId || payload.githubId,
-      name: payload.name,
-      email: payload.email || '',
+      id: payload.id,
+      name: payload.fullName,
+      email: payload.email || `${payload.githubId}@github.local`, // Fallback email
       avatarUrl: payload.avatarUrl || '',
-      createdAt: payload.createdAt,
-      updatedAt: payload.updatedAt,
+      createdAt: payload.createdAt || new Date().toISOString(),
+      updatedAt: payload.updatedAt || new Date().toISOString(),
       role: payload.role,
     };
 

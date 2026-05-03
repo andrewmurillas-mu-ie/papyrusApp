@@ -1,6 +1,9 @@
 import passport from "passport";
+import dotenv from "dotenv";
+dotenv.config();
+
 import { Strategy as GitHubStrategy, Profile } from "passport-github2";
-import User, { createUser, getUserByGithubId } from "../models/user_model.js";
+import User, { createUser, getUserByGithubId } from "../models/user_model";
 
 passport.use(
   new GitHubStrategy(

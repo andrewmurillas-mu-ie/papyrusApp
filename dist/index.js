@@ -14,7 +14,10 @@ const workspace_routes_1 = __importDefault(require("./routes/workspace_routes"))
 require("./auth/passport");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
-app.use((0, cors_1.default)({ origin: "http://localhost:5174" }));
+app.use((0, cors_1.default)({
+    origin: "http://localhost:5174",
+    credentials: true,
+}));
 app.use(express_1.default.json());
 app.use("/auth", auth_routes_1.default);
 app.use("/", user_routes_1.default);

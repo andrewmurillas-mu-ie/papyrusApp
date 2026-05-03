@@ -4,11 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const passport_js_1 = __importDefault(require("../auth/passport.js"));
+const passport_1 = __importDefault(require("../auth/passport"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const router = express_1.default.Router();
-router.get("/github", passport_js_1.default.authenticate("github", { scope: ["user:email"], session: false }));
-router.get("/github/callback", passport_js_1.default.authenticate("github", {
+router.get("/github", passport_1.default.authenticate("github", { scope: ["user:email"], session: false }));
+router.get("/github/callback", passport_1.default.authenticate("github", {
     session: false,
     failureRedirect: "/auth/failure",
 }), (req, res) => {
