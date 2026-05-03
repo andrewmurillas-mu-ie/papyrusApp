@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 import AiCache from '../models/ai_cache_model';
+import SearchablePage from '../models/searchable_page_model';
 
 interface LanguageToolReplacement {
   value: string;
@@ -89,6 +90,83 @@ function isMongooseConnected(): boolean {
   return mongoose.connection.readyState === 1;
 }
 
+function extractKeywords(query: string): string[] {
+  const stopWords = new Set([
+    'the',
+    'a',
+    'an',
+    'and',
+    'or',
+    'of',
+    'to',
+    'in',
+    'on',
+    'for',
+    'about',
+    'with',
+    'my',
+    'me',
+    'find',
+    'show',
+    'notes',
+    'note',
+    'page',
+    'pages',
+  ]);
+
+  return query
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter((word) => word.length >= 3 && !stopWords.has(word))
+    .slice(0, 8);
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildSnippet(contentText: string, keywords: string[]): string {
+  if (!contentText) return '';
+
+  const lowerContent = contentText.toLowerCase();
+  const firstKeyword = keywords.find((keyword) => lowerContent.includes(keyword));
+
+  if (!firstKeyword) {
+    return contentText.slice(0, 180);
+  }
+
+  const index = lowerContent.indexOf(firstKeyword);
+  const start = Math.max(0, index - 70);
+  const end = Math.min(contentText.length, index + 140);
+
+  const prefix = start > 0 ? '...' : '';
+  const suffix = end < contentText.length ? '...' : '';
+
+  return `${prefix}${contentText.slice(start, end)}${suffix}`;
+}
+
+function scorePage(title: string, contentText: string, keywords: string[]): number {
+  const lowerTitle = title.toLowerCase();
+  const lowerContent = contentText.toLowerCase();
+
+  const matchedKeywords = keywords.filter(
+    (keyword) => lowerTitle.includes(keyword) || lowerContent.includes(keyword),
+  );
+
+  const uniqueMatchedKeywords = new Set(matchedKeywords);
+
+  const titleMatches = keywords.filter((keyword) => lowerTitle.includes(keyword));
+  const contentMatches = keywords.filter((keyword) => lowerContent.includes(keyword));
+
+  return (
+    uniqueMatchedKeywords.size * 10 +
+    titleMatches.length * 3 +
+    contentMatches.length * 2
+  );
+}
+
 export async function requestGrammarAssist(req: Request, res: Response): Promise<void> {
   try {
     const rawText = typeof req.body.text === 'string' ? req.body.text : '';
@@ -173,6 +251,150 @@ export async function requestGrammarAssist(req: Request, res: Response): Promise
     console.error('Grammar assistance failed:', error);
     res.status(500).json({
       error: 'Grammar assistance failed. Check the backend terminal for details.',
+    });
+  }
+}
+
+export async function requestSaveSearchablePage(req: Request, res: Response): Promise<void> {
+  try {
+    if (!isMongooseConnected()) {
+      res.status(503).json({
+        error: 'MongoDB is not connected. Cannot save searchable page right now.',
+      });
+      return;
+    }
+
+    const title =
+      typeof req.body.title === 'string' && req.body.title.trim()
+        ? req.body.title.trim()
+        : 'Untitled page';
+
+    const contentHtml = typeof req.body.contentHtml === 'string' ? req.body.contentHtml : '';
+    const contentText = htmlToPlainText(contentHtml);
+    const ownerId = typeof req.body.ownerId === 'string' ? req.body.ownerId : '';
+    const sourceKey =
+      typeof req.body.sourceKey === 'string' && req.body.sourceKey.trim()
+        ? req.body.sourceKey.trim()
+        : `editor-${ownerId || 'guest'}-default`;
+
+    if (!contentText) {
+      res.status(400).json({
+        error: 'Page content is required before saving for search.',
+      });
+      return;
+    }
+
+    const page = await SearchablePage.findOneAndUpdate(
+      { ownerId, sourceKey },
+      {
+        $set: {
+          title,
+          contentHtml,
+          contentText,
+          ownerId,
+          sourceKey,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+      },
+    );
+
+    if (!page) {
+      res.status(500).json({
+        error: 'Could not save searchable page.',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Page saved for smart search.',
+      page: {
+        id: page._id,
+        title: page.title,
+        sourceKey: page.sourceKey,
+        contentText: page.contentText,
+        updatedAt: page.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error('Saving searchable page failed:', error);
+    res.status(500).json({
+      error: 'Saving searchable page failed. Check the backend terminal for details.',
+    });
+  }
+}
+
+export async function requestSmartSearch(req: Request, res: Response): Promise<void> {
+  try {
+    if (!isMongooseConnected()) {
+      res.status(503).json({
+        error: 'MongoDB is not connected. Smart search needs saved pages in MongoDB.',
+      });
+      return;
+    }
+
+    const query = typeof req.body.query === 'string' ? req.body.query.trim() : '';
+    const ownerId = typeof req.body.ownerId === 'string' ? req.body.ownerId : '';
+
+    if (!query) {
+      res.status(400).json({
+        error: 'Search query is required.',
+      });
+      return;
+    }
+
+    const keywords = extractKeywords(query);
+
+    if (!keywords.length) {
+      res.status(400).json({
+        error: 'Please use a more specific search query.',
+      });
+      return;
+    }
+
+    const regexes = keywords.map((keyword) => new RegExp(escapeRegex(keyword), 'i'));
+
+    const searchFilter = {
+      ...(ownerId ? { ownerId } : {}),
+      $or: [
+        { title: { $in: regexes } },
+        { contentText: { $in: regexes } },
+      ],
+    };
+
+    const pages = await SearchablePage.find(searchFilter)
+      .sort({ updatedAt: -1 })
+      .limit(20);
+
+    const results = pages
+      .map((page) => ({
+        id: page._id,
+        title: page.title,
+        snippet: buildSnippet(page.contentText, keywords),
+        score: scorePage(page.title, page.contentText, keywords),
+        updatedAt: page.updatedAt,
+      }))
+      .filter((page) => page.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
+
+    const summary = results.length
+      ? `Found ${results.length} page(s) related to: ${keywords.join(', ')}. The best match is "${results[0].title}".`
+      : `No saved pages matched the important words: ${keywords.join(', ')}.`;
+
+    res.json({
+      query,
+      keywords,
+      summary,
+      results,
+    });
+  } catch (error) {
+    console.error('Smart search failed:', error);
+    res.status(500).json({
+      error: 'Smart search failed. Check the backend terminal for details.',
     });
   }
 }
