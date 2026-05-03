@@ -2,7 +2,7 @@ import { api } from "./client.ts";
 import Workspace from "../backend_objects/Workspace.ts";
 
 const workspaceService = {
-  getAllWorkspaces: async (): Promise<Workspace[]> => {
+  getAll: async (): Promise<Workspace[]> => {
     const { data } = await api.get("/workspace");
     return data;
   },

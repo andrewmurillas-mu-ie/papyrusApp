@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.connect = connect;
 require("dotenv/config");
 const mongoose_1 = __importDefault(require("mongoose"));
-const uri = process.env.MONGO_URI;
 async function connect() {
     return mongoose_1.default.connect(process.env.MONGO_URI);
 }

@@ -17,7 +17,7 @@ export default function DashboardPage(): ReactElement {
   useEffect((): void => {
     const load: () => void = async (): Promise<void> => {
       try {
-        const data: User[] = await userService.getAllUsers();
+        const data: User[] = await userService.getAll();
         setUsers(Array.isArray(data) ? data : []);
       } catch {
         setError(
@@ -34,7 +34,7 @@ export default function DashboardPage(): ReactElement {
   useEffect((): void => {
     const load: () => void = async (): Promise<void> => {
       try {
-        const data: Page[] = await pageService.getAllPages();
+        const data: Page[] = await pageService.getAll();
         setPages(Array.isArray(data) ? data : []);
       } catch {
         setError(
@@ -45,7 +45,7 @@ export default function DashboardPage(): ReactElement {
       }
     };
 
-    load()
+    load();
   }, []);
 
   return (

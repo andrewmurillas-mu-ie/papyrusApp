@@ -1,10 +1,12 @@
 import mongoose, { Model, Schema, Types } from "mongoose";
 
+type ObjectId = Types.ObjectId;
+
 export interface Workspace {
   name: string;
-  owner: Types.ObjectId;
+  owner: ObjectId;
   members: Array<{
-    user: Types.ObjectId;
+    user: ObjectId;
     permission: "owner" | "editor" | "viewer";
   }>;
   createdAt: Date;

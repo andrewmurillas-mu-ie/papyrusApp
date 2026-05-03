@@ -33,6 +33,8 @@ pnpm-debug.log*
 # Project notes
 CLAUDE.md
 
+CLAUDE.md
+/frontend/package-lock.json
 # OS files
 .DS_Store
 Thumbs.db

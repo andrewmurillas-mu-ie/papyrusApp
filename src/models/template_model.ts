@@ -1,9 +1,11 @@
 import mongoose, { Model, Schema, Types } from "mongoose";
 
+type ObjectId = Types.ObjectId;
+
 export default interface Template {
   name: string;
   description: string;
-  createdBy: Types.ObjectId;
+  createdBy: ObjectId;
   blocks: Array<{
     type: string;
     content: Record<string, unknown>;
@@ -27,14 +29,23 @@ const TemplateSchema = new Schema<Template>({
     },
   ],
   isPublic: { type: Boolean, default: false },
-  category: { type: String, enum: ["to-do", "planner", "expense", "notes", "other"], required: true },
+  category: {
+    type: String,
+    enum: ["to-do", "planner", "expense", "notes", "other"],
+    required: true,
+  },
   createdAt: { type: Date, default: Date.now },
   lastUpdated: { type: Date, default: Date.now },
 });
 
-const TemplateModel: Model<Template> = mongoose.model<Template>("Template", TemplateSchema);
+const TemplateModel: Model<Template> = mongoose.model<Template>(
+  "Template",
+  TemplateSchema,
+);
 
-export async function getTemplate(templateId: string): Promise<Template | null> {
+export async function getTemplate(
+  templateId: string,
+): Promise<Template | null> {
   return TemplateModel.findById(templateId);
 }
 
@@ -46,7 +57,10 @@ export async function createTemplate(template: Template): Promise<Template> {
   return TemplateModel.create(template);
 }
 
-export async function updateTemplate(templateId: string, template: Partial<Template>): Promise<void> {
+export async function updateTemplate(
+  templateId: string,
+  template: Partial<Template>,
+): Promise<void> {
   await TemplateModel.findByIdAndUpdate(templateId, template);
 }
 

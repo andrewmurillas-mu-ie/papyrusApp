@@ -1,10 +1,12 @@
 import mongoose, { Model, Schema, Types } from "mongoose";
 
+type ObjectId = Types.ObjectId;
+
 export default interface Version {
-  page: Types.ObjectId;
+  page: ObjectId;
   versionNumber: number;
   snapshot: unknown;
-  savedBy: Types.ObjectId;
+  savedBy: ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,7 +20,10 @@ const VersionSchema = new Schema<Version>({
   updatedAt: { type: Date, default: Date.now },
 });
 
-const VersionModel: Model<Version> = mongoose.model<Version>("Version", VersionSchema);
+const VersionModel: Model<Version> = mongoose.model<Version>(
+  "Version",
+  VersionSchema,
+);
 
 export async function getVersion(versionId: string): Promise<Version | null> {
   return VersionModel.findById(versionId);
