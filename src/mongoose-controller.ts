@@ -8,6 +8,9 @@ export async function connectMongoose(): Promise<void> {
     throw new Error('MONGO_URI is missing from .env');
   }
 
-  await mongoose.connect(uri);
+  await mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 5000,
+  });
+
   console.log('Mongoose connected to MongoDB');
 }

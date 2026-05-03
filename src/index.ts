@@ -5,6 +5,7 @@ import { connectMongoose } from './mongoose-controller';
 import userRouter from './routes/user_routes';
 import authRouter from './routes/auth_routes';
 import documentRouter from './routes/document_routes';
+import aiRouter from './routes/ai_routes';
 import './auth/passport';
 import cors from 'cors';
 
@@ -25,6 +26,7 @@ app.use(express.json());
 app.use('/auth', authRouter);
 app.use('/', userRouter);
 app.use('/documents', documentRouter);
+app.use('/ai', aiRouter);
 
 const client: Promise<MongoClient> = connect();
 export const db: Promise<Db> = client.then((c) => c.db('papyrus'));
