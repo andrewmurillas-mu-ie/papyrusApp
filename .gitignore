@@ -12,3 +12,4 @@ yarn-error.log*
 .vscode/*
 
 CLAUDE.md
+/frontend/package-lock.json
