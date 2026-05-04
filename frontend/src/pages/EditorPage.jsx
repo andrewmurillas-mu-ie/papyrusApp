@@ -153,6 +153,8 @@ export default function EditorPage() {
       if (lastSearchSyncRef.current === syncKey) return;
 
       try {
+        setSearchSyncStatus('Syncing page...');
+
         await savePageForSearch({
           title: title || 'Untitled page',
           contentHtml: currentHtml,
@@ -162,7 +164,7 @@ export default function EditorPage() {
 
         lastSearchSyncRef.current = syncKey;
         setSearchSyncStatus(
-          `Synced at ${new Date().toLocaleTimeString('en-GB', {
+          `Saved and searchable · Last synced: ${new Date().toLocaleTimeString('en-GB', {
             hour: '2-digit',
             minute: '2-digit',
           })}`,
@@ -288,7 +290,7 @@ export default function EditorPage() {
             {template ? ` · Template: ${template}` : ''}
           </span>
           <span className="muted">
-            Smart search sync: {searchSyncStatus || 'Waiting for page content'}
+            Smart search: {searchSyncStatus || 'Waiting for page content'}
           </span>
           {searchSyncError ? (
             <span className="form-error">{searchSyncError}</span>
