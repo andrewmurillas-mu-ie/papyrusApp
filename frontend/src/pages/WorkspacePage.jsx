@@ -80,6 +80,13 @@ export default function WorkspacePage() {
             />
           </label>
 
+          <p className="muted">
+            Smart Search looks through pages that have been synced from the
+            editor. Try queries like “Find notes about software testing”,
+            “Find notes about equivalence partitioning”, or “Find notes about
+            project tasks”.
+          </p>
+
           <button
             type="submit"
             className="primary-button"
@@ -124,8 +131,8 @@ export default function WorkspacePage() {
               <div className="empty-state">
                 <p>No matching pages found.</p>
                 <span>
-                  Try writing and waiting for the editor to sync, then search
-                  again.
+                  Try writing in the editor first, wait until it says “Saved
+                  and searchable”, then search again using broader keywords.
                 </span>
               </div>
             )}
