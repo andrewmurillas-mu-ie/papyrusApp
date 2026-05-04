@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PagesProvider } from './context/PagesContext';
 
 import './styles/app.css';
 
@@ -14,7 +15,9 @@ if (root) {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <App />
+          <PagesProvider>
+            <App />
+          </PagesProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

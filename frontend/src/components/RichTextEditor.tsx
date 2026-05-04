@@ -13,19 +13,63 @@ import { Color } from '@tiptap/extension-color';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import { TableKit } from '@tiptap/extension-table';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+// Collaboration features temporarily disabled due to version conflicts
+// import Collaboration from '@tiptap/extension-collaboration';
+// import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+// import * as Y from 'yjs';
+// import { WebsocketProvider } from 'y-websocket';
 
 const COLOR_PALETTE = ['#ffffff', '#fbbc04', '#34a853', '#4285f4', '#ea4335', '#c58b57'];
 
 interface RichTextEditorProps {
   initialContent?: string;
   onReady?: (getHTML: () => string) => void;
+  onContentChange?: (content: string) => void;
+  pageId?: string;
+  enableCollaboration?: boolean;
 }
 
-export default function RichTextEditor({ initialContent, onReady }: RichTextEditorProps): React.ReactElement | null {
+export default function RichTextEditor({ initialContent, onReady, onContentChange, pageId, enableCollaboration = false }: RichTextEditorProps): React.ReactElement | null {
+  
+  // Collaboration features temporarily disabled due to version conflicts
+  // useEffect(() => {
+  //   if (enableCollaboration && pageId) {
+  //     const doc = new Y.Doc();
+  //     const provider = new WebsocketProvider(
+  //       'ws://localhost:1234',
+  //       `papyrus-document-${pageId}`,
+  //       doc,
+  //       {
+  //         params: {
+  //           token: 'papyrus-collab-token'
+  //         }
+  //       }
+  //     );
+
+  //     provider.on('status', (event: any) => {
+  //       console.log('Collaboration status:', event.status);
+  //     });
+
+  //     provider.on('sync', (isSynced: boolean) => {
+  //       console.log('Collaboration synced:', isSynced);
+  //     });
+
+  //     return () => {
+  //       provider.destroy();
+  //     }
+  //   }
+  // }, [enableCollaboration, pageId])
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         strike: false,
+        heading: {
+          levels: [1, 2, 3, 4, 5, 6],
+        },
+        link: false,
       }),
       Strike,
       Highlight.configure({ multicolor: true }),
@@ -47,19 +91,55 @@ export default function RichTextEditor({ initialContent, onReady }: RichTextEdit
         },
       }),
       TableKit.configure({}),
+      TaskList.configure({
+        HTMLAttributes: {
+          class: 'task-list',
+        },
+      }),
+      TaskItem.configure({
+        HTMLAttributes: {
+          class: 'task-item',
+        },
+      }),
+      // Collaboration features temporarily disabled due to version conflicts
+      // ...(enableCollaboration && pageId ? [
+      //   Collaboration.configure({
+      //     document: new Y.Doc(),
+      //   }),
+      //   CollaborationCursor.configure({
+      //     provider: new WebsocketProvider(
+      //       'ws://localhost:1234',
+      //       `papyrus-document-${pageId}`,
+      //       new Y.Doc()
+      //     ),
+      //   }),
+      // ] : []),
     ],
-    content: initialContent || '',
+    content: initialContent,
     autofocus: 'end',
+    editorProps: {
+      attributes: {
+        class: 'tiptap',
+      },
+      handleKeyDown: () => {
+        return false;
+      },
+    },
+    onUpdate: ({ editor }) => {
+      if (onReady) {
+        onReady(() => editor.getHTML());
+      }
+      if (onContentChange) {
+        onContentChange(editor.getHTML());
+      }
+    },
   });
 
   useEffect(() => {
-    if (!editor || !onReady) return;
-    onReady(() => editor.getHTML());
-  }, [editor, onReady]);
-
-  useEffect(() => {
-    if (!editor) return;
-    editor.commands.setContent(initialContent || '');
+    if (!editor || !initialContent) return;
+    if (editor.getHTML() !== initialContent) {
+      editor.commands.setContent(initialContent);
+    }
   }, [initialContent, editor]);
 
   if (!editor) return null;
@@ -103,20 +183,10 @@ export default function RichTextEditor({ initialContent, onReady }: RichTextEdit
 
   const applyInlineAndClose = (command: () => void) => {
     command();
-    // Force hide all tippy tooltips
-    const tippyElements = document.querySelectorAll('[data-state="visible"]');
-    tippyElements.forEach(el => {
-      el.setAttribute('data-state', 'hidden');
-    });
-    // Clear selection and blur editor
-    editor.commands.setTextSelection({ from: 0, to: 0 });
-    editor.commands.blur();
-    // Force document click to close any remaining menus
+    // Just refocus editor, don't blur or click elsewhere
     setTimeout(() => {
-      document.activeElement instanceof HTMLElement && document.activeElement.blur();
-      // Trigger a click event to close any remaining popups
-      document.body.click();
-    }, 0);
+      editor.commands.focus();
+    }, 10);
   };
 
   const promptForLink = () => {
@@ -213,6 +283,14 @@ export default function RichTextEditor({ initialContent, onReady }: RichTextEdit
           onClick={clickBlock(() => editor.chain().focus().toggleOrderedList())}
         >
           1.
+        </button>
+
+        <button
+          type="button"
+          className={editor.isActive('taskList') ? 'rte-btn is-active' : 'rte-btn'}
+          onClick={clickBlock(() => editor.chain().focus().toggleTaskList())}
+        >
+          ☑
         </button>
 
         <button

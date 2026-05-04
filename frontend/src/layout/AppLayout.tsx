@@ -1,21 +1,42 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-
-
-const navItems: [string, string][] = [
-  ['Dashboard', '/dashboard'],
-  ['Workspace', '/workspace'],
-  ['Editor', '/editor'],
-  ['Templates', '/templates'],
-  ['Settings', '/settings'],
-];
+import { usePages } from '../context/PagesContext';
+import PageTree from '../components/PageTree';
 
 
 export default function AppLayout(): React.ReactElement {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { createPage, currentPage, toggleFavorite } = usePages();
+  const navigate = useNavigate();
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      // Ctrl/Cmd + N: New page (only when not in editor)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n' && !e.shiftKey) {
+        e.preventDefault();
+        // Only create page if we're not already in the editor
+        if (!window.location.pathname.startsWith('/editor')) {
+          const newPage = await createPage({ title: 'Untitled', content: '' });
+          navigate(`/editor/${newPage.id}`);
+        }
+      }
+      
+      // Ctrl/Cmd + Shift + F: Toggle favorite
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        if (currentPage) {
+          await toggleFavorite(currentPage.id);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [createPage, currentPage, toggleFavorite]);
 
   return (
     <div className="app-shell">
@@ -27,6 +48,8 @@ export default function AppLayout(): React.ReactElement {
             display: 'flex',
             flexDirection: 'column',
             gap: '0.75rem',
+            flexShrink: 0,
+            marginBottom: '1rem',
           }}
         >
           <div
@@ -67,25 +90,108 @@ export default function AppLayout(): React.ReactElement {
           </div>
         </div>
 
-
-        {/* nav in the middle */}
-        <nav className="nav-list">
-          {navItems.map(([label, path]) => (
-            <NavLink
-              key={path}
-              to={path}
-              className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
+        {/* Navigation */}
+        <nav className="nav-list" style={{ flexShrink: 0, marginBottom: '1rem' }}>
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              `nav-link ${isActive ? 'active' : ''}`
+            }
+            style={{
+              display: 'block',
+              padding: '8px 12px',
+              margin: '2px 0',
+              borderRadius: '6px',
+              color: 'var(--text)',
+              textDecoration: 'none',
+              fontSize: '14px',
+              transition: 'background-color 0.2s ease',
+            }}
+          >
+            📊 Dashboard
+          </NavLink>
+          <NavLink
+            to="/workspace"
+            className={({ isActive }) =>
+              `nav-link ${isActive ? 'active' : ''}`
+            }
+            style={{
+              display: 'block',
+              padding: '8px 12px',
+              margin: '2px 0',
+              borderRadius: '6px',
+              color: 'var(--text)',
+              textDecoration: 'none',
+              fontSize: '14px',
+              transition: 'background-color 0.2s ease',
+            }}
+          >
+            🏢 Workspace
+          </NavLink>
+          <NavLink
+            to="/templates"
+            className={({ isActive }) =>
+              `nav-link ${isActive ? 'active' : ''}`
+            }
+            style={{
+              display: 'block',
+              padding: '8px 12px',
+              margin: '2px 0',
+              borderRadius: '6px',
+              color: 'var(--text)',
+              textDecoration: 'none',
+              fontSize: '14px',
+              transition: 'background-color 0.2s ease',
+            }}
+          >
+            📋 Templates
+          </NavLink>
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `nav-link ${isActive ? 'active' : ''}`
+            }
+            style={{
+              display: 'block',
+              padding: '8px 12px',
+              margin: '2px 0',
+              borderRadius: '6px',
+              color: 'var(--text)',
+              textDecoration: 'none',
+              fontSize: '14px',
+              transition: 'background-color 0.2s ease',
+            }}
+          >
+            ⚙️ Settings
+          </NavLink>
         </nav>
 
+        {/* Divider between navigation and pages */}
+        <div 
+          style={{ 
+            height: '1px', 
+            backgroundColor: 'var(--border, #ccc)', 
+            margin: '0.5rem 0',
+            opacity: 0.3 
+          }} 
+        />
+
+        {/* Page tree section - scrollable */}
+        <div 
+          className="page-tree-section" 
+          style={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column',
+            minHeight: 0,
+            overflow: 'hidden'
+          }}
+        >
+          <PageTree />
+        </div>
 
         {/* footer: user + logout */}
-        <div className="sidebar-footer">
+        <div className="sidebar-footer" style={{ flexShrink: 0 }}>
           <div
             className="user-pill"
             style={{ textAlign: 'left', justifyContent: 'flex-start' }}

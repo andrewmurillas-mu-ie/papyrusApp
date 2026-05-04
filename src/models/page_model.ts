@@ -3,74 +3,100 @@ import WorkspaceModel from "./workspace_model";
 
 type ObjectId = Types.ObjectId;
 
-export default interface Page {
+export interface Page {
   title: string;
-  workspace: ObjectId;
-  createdBy: ObjectId;
-  blocks: ObjectId[];
+  icon: string;
+  content: string;
+  contentHtml: string;
+  contentText: string;
+  workspaceId: ObjectId | null;
+  parentId: ObjectId | null;
+  isFavorite: boolean;
   isShared: boolean;
   currentVersion: number;
+  createdBy: ObjectId;
+  updatedBy: ObjectId;
   createdAt: Date;
-  lastUpdate: Date;
+  updatedAt: Date;
 }
 
 const PageSchema = new Schema<Page>({
   title: { type: String, required: true },
-  workspace: { type: Schema.Types.ObjectId, ref: "Workspace", required: true },
-  createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  blocks: [{ type: Schema.Types.ObjectId, ref: "Block" }],
+  icon: { type: String, default: '📄' },
+  content: { type: String, default: '' },
+  contentHtml: { type: String, default: '' },
+  contentText: { type: String, default: '' },
+  workspaceId: { type: Schema.Types.ObjectId, ref: 'Workspace', default: null },
+  parentId: { type: Schema.Types.ObjectId, ref: 'Page', default: null },
+  isFavorite: { type: Boolean, default: false },
   isShared: { type: Boolean, default: false },
   currentVersion: { type: Number, default: 1 },
+  createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  updatedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now },
-  lastUpdate: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
-const PageModel: Model<Page> = mongoose.model<Page>("Page", PageSchema);
+// Indexes for better performance
+PageSchema.index({ workspaceId: 1, createdAt: -1 });
+PageSchema.index({ createdBy: 1 });
+PageSchema.index({ updatedAt: -1 });
+
+const PageModel = mongoose.model<Page>('Page', PageSchema);
+
+// CRUD operations
+export async function createPage(page: Omit<Page, '_id' | 'createdAt' | 'updatedAt'>): Promise<Page> {
+  const newPage = new PageModel(page);
+  return await newPage.save();
+}
 
 export async function getPage(pageId: string): Promise<Page | null> {
-  return PageModel.findById(pageId);
+  return await PageModel.findById(pageId);
 }
 
-export async function getPagesByUserWorkspaces(
-  userId: string,
-): Promise<Page[]> {
-  const userObjectId = new Types.ObjectId(userId);
-  const userWorkspaces = await WorkspaceModel.find(
-    { $or: [{ owner: userObjectId }, { "members.user": userObjectId }] },
-    { _id: 1 },
-  );
-  const workspaceIds = userWorkspaces.map((w) => w._id);
-  return PageModel.find({ workspace: { $in: workspaceIds } });
+export async function getPagesByWorkspace(workspaceId: string): Promise<Page[]> {
+  return await PageModel.find({ workspaceId }).sort({ updatedAt: -1 });
 }
 
-export async function isPageOwnedByUser(
-  pageId: string,
-  userId: string,
-): Promise<boolean> {
-  const page = await PageModel.findById(pageId, { workspace: 1 });
+export async function updatePage(pageId: string, updates: Partial<Page>): Promise<Page | null> {
+  return await PageModel.findByIdAndUpdate(pageId, updates, { new: true });
+}
+
+export async function deletePage(pageId: string): Promise<boolean> {
+  const result = await PageModel.findByIdAndDelete(pageId);
+  return !!result;
+}
+
+// Access control functions
+export async function canUserAccessPage(pageId: string, userId: string): Promise<boolean> {
+  const page = await PageModel.findById(pageId).populate('workspaceId');
   if (!page) return false;
-  const workspace = await WorkspaceModel.findOne({
-    _id: page.workspace,
-    owner: new Types.ObjectId(userId),
-  });
-  return workspace !== null;
+  
+  const workspace = page.workspaceId as any;
+  return workspace.owner.toString() === userId || 
+         workspace.members.some((member: any) => member.user.toString() === userId);
 }
 
-export async function getAllPages(): Promise<Page[]> {
-  return PageModel.find();
+export async function canUserEditPage(pageId: string, userId: string): Promise<boolean> {
+  const page = await PageModel.findById(pageId).populate('workspaceId');
+  if (!page) return false;
+  
+  const workspace = page.workspaceId as any;
+  const userRole = workspace.members.find((member: any) => member.user.toString() === userId)?.role;
+  
+  return workspace.owner.toString() === userId || 
+         ['owner', 'admin', 'editor'].includes(userRole);
 }
 
-export async function createPage(page: Page): Promise<Page> {
-  return PageModel.create(page);
+export async function getPagesByUser(userId: string): Promise<Page[]> {
+  return await PageModel.find({ 
+    createdBy: userId,
+    // Include both personal pages (workspaceId: null) and workspace pages
+  }).sort({ updatedAt: -1 });
 }
 
-export async function updatePage(
-  pageId: string,
-  page: Partial<Page>,
-): Promise<void> {
-  await PageModel.findByIdAndUpdate(pageId, page);
+export async function isPageAccessibleByUser(pageId: string, userId: string): Promise<boolean> {
+  return await canUserAccessPage(pageId, userId);
 }
 
-export async function deletePage(pageId: string): Promise<void> {
-  await PageModel.findByIdAndDelete(pageId);
-}
+export default PageModel;
