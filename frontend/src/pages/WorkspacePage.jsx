@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import InfoBanner from '../components/InfoBanner';
+import { requestSmartSearch } from '../api/aiService';
+import { useAuth } from '../context/AuthContext';
 
 const mockPages = [
   { title: 'Quarterly planning', status: 'Updated 2h ago' },
@@ -7,6 +10,41 @@ const mockPages = [
 ];
 
 export default function WorkspacePage() {
+  const { user } = useAuth();
+  const [query, setQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const [searchResult, setSearchResult] = useState(null);
+
+  const handleSmartSearch = async (event) => {
+    event.preventDefault();
+
+    if (!query.trim()) {
+      setSearchError('Please enter a search query.');
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchError('');
+    setSearchResult(null);
+
+    try {
+      const result = await requestSmartSearch({
+        query,
+        ownerId: user?.id || '',
+      });
+
+      setSearchResult(result);
+    } catch (error) {
+      setSearchError(
+        error.response?.data?.error ||
+          'Smart search failed. Check the backend terminal.',
+      );
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   return (
     <section className="page-stack">
       <div className="hero-card">
@@ -15,19 +53,85 @@ export default function WorkspacePage() {
           <h2>Design Studio</h2>
           <p className="muted">
             A single solid workspace page for the current frontend stage. The
-            structure is ready for workspace data, pages, members, and chat
-            later.
+            structure is ready for workspace data, pages, members, chat, and AI
+            smart search.
           </p>
         </div>
       </div>
 
-      <InfoBanner
-        title="Backend needed for full workspace mode"
-        tone="warning"
-      >
-        Add workspace routes, a workspace model, membership data, and workspace
-        page listing endpoints to replace these placeholders.
+      <InfoBanner title="Smart Search enabled">
+        Pages written in the editor are synced into MongoDB and can be searched
+        here using natural-language style queries.
       </InfoBanner>
+
+      <article className="panel-card">
+        <div className="panel-header">
+          <h3>AI-powered Smart Search</h3>
+        </div>
+
+        <form onSubmit={handleSmartSearch} className="page-stack">
+          <label>
+            Search your saved pages
+            <input
+              type="text"
+              placeholder="Example: Find notes about boundary value testing"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="primary-button"
+            disabled={searchLoading}
+          >
+            {searchLoading ? 'Searching...' : 'Smart Search'}
+          </button>
+        </form>
+
+        {searchError ? <p className="form-error">{searchError}</p> : null}
+
+        {searchResult ? (
+          <div className="page-stack" style={{ marginTop: '1rem' }}>
+            <div className="mini-card">
+              <span>Search summary:</span>
+              <strong> {searchResult.summary}</strong>
+            </div>
+
+            <p className="muted">
+              Keywords used:{' '}
+              {searchResult.keywords?.length
+                ? searchResult.keywords.join(', ')
+                : 'None'}
+            </p>
+
+            {searchResult.results?.length ? (
+              <div className="list-stack">
+                {searchResult.results.map((page) => (
+                  <div key={page.id} className="list-row">
+                    <div>
+                      <strong>{page.title}</strong>
+                      <p className="muted">{page.snippet}</p>
+                      <p className="muted">
+                        Score: {page.score} · Updated:{' '}
+                        {new Date(page.updatedAt).toLocaleString('en-GB')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <p>No matching pages found.</p>
+                <span>
+                  Try writing and waiting for the editor to sync, then search
+                  again.
+                </span>
+              </div>
+            )}
+          </div>
+        ) : null}
+      </article>
 
       <div className="workspace-grid">
         <aside className="panel-card">

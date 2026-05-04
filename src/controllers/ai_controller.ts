@@ -296,7 +296,7 @@ export async function requestSaveSearchablePage(req: Request, res: Response): Pr
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
         upsert: true,
         setDefaultsOnInsert: true,
       },

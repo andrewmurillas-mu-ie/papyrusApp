@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import InfoBanner from '../components/InfoBanner';
 import { useAuth } from '../context/AuthContext';
 import RichTextEditor from '../components/RichTextEditor';
-import { requestGrammarAssistance } from '../api/aiService';
+import { requestGrammarAssistance, savePageForSearch } from '../api/aiService';
 
 function getInitialContent(template) {
   switch (template) {
@@ -48,9 +48,12 @@ export default function EditorPage() {
   const [grammarLoading, setGrammarLoading] = useState(false);
   const [grammarResult, setGrammarResult] = useState(null);
   const [grammarError, setGrammarError] = useState('');
+  const [searchSyncStatus, setSearchSyncStatus] = useState('');
+  const [searchSyncError, setSearchSyncError] = useState('');
 
   // holds a function we can call to get current HTML from Tiptap
   const getEditorHtmlRef = useRef(null);
+  const lastSearchSyncRef = useRef('');
 
   const storageKey = user
     ? `papyrus_editor_${user.id}_${template || 'default'}`
@@ -128,6 +131,53 @@ export default function EditorPage() {
       setGrammarLoading(false);
     }
   };
+
+  // Auto-sync editor content to MongoDB so it can be found by Smart Search
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const getHtml = getEditorHtmlRef.current;
+
+      if (!getHtml || !user?.id) return;
+
+      const currentHtml = getHtml();
+      const plainText = currentHtml
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!plainText) return;
+
+      const syncKey = `${title || 'Untitled page'}|${currentHtml}`;
+
+      if (lastSearchSyncRef.current === syncKey) return;
+
+      try {
+        await savePageForSearch({
+          title: title || 'Untitled page',
+          contentHtml: currentHtml,
+          ownerId: user.id,
+          sourceKey: `editor-${user.id}-${template || 'default'}`,
+        });
+
+        lastSearchSyncRef.current = syncKey;
+        setSearchSyncStatus(
+          `Synced at ${new Date().toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}`,
+        );
+        setSearchSyncError('');
+      } catch (error) {
+        setSearchSyncError(
+          error.response?.data?.error ||
+            'Could not sync this page for smart search.',
+        );
+      }
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, [title, template, user?.id]);
 
   const formattedLastSaved = lastSaved
     ? new Date(lastSaved).toLocaleTimeString('en-GB', {
@@ -237,6 +287,12 @@ export default function EditorPage() {
             Auto-saved for user {user?.name || 'guest'}
             {template ? ` · Template: ${template}` : ''}
           </span>
+          <span className="muted">
+            Smart search sync: {searchSyncStatus || 'Waiting for page content'}
+          </span>
+          {searchSyncError ? (
+            <span className="form-error">{searchSyncError}</span>
+          ) : null}
         </div>
       </article>
     </section>
