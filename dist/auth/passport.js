@@ -14,9 +14,8 @@ passport_1.default.use(new passport_github2_1.Strategy({
     clientSecret: process.env.GITHUB_CLIENT_SECRET,
     callbackURL: "http://localhost:3000/auth/github/callback",
 }, async (accessToken, _refreshToken, profile, done) => {
-    var _a, _b, _c, _d, _e, _f;
     try {
-        let email = ((_b = (_a = profile.emails) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.value) || null;
+        let email = profile.emails?.[0]?.value || null;
         if (!email) {
             const response = await axios_1.default.get("https://api.github.com/user/emails", {
                 headers: {
@@ -30,7 +29,7 @@ passport_1.default.use(new passport_github2_1.Strategy({
             const primaryVerified = emails.find((item) => item.primary && item.verified);
             const verified = emails.find((item) => item.verified);
             const fallback = emails[0];
-            email = (primaryVerified === null || primaryVerified === void 0 ? void 0 : primaryVerified.email) || (verified === null || verified === void 0 ? void 0 : verified.email) || (fallback === null || fallback === void 0 ? void 0 : fallback.email) || null;
+            email = primaryVerified?.email || verified?.email || fallback?.email || null;
         }
         let user = await (0, user_model_1.getUserByGithubId)(profile.id);
         if (!user) {
@@ -38,7 +37,7 @@ passport_1.default.use(new passport_github2_1.Strategy({
                 fullName: profile.displayName || profile.username || "",
                 githubId: profile.id,
                 email,
-                avatarUrl: ((_d = (_c = profile.photos) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.value) || "",
+                avatarUrl: profile.photos?.[0]?.value || "",
                 role: "user",
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -51,7 +50,7 @@ passport_1.default.use(new passport_github2_1.Strategy({
                 changed = true;
             }
             const fullName = profile.displayName || profile.username || user.fullName;
-            const avatarUrl = ((_f = (_e = profile.photos) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.value) || user.avatarUrl;
+            const avatarUrl = profile.photos?.[0]?.value || user.avatarUrl;
             if (user.fullName !== fullName) {
                 user.fullName = fullName;
                 changed = true;
@@ -72,3 +71,4 @@ passport_1.default.use(new passport_github2_1.Strategy({
     }
 }));
 exports.default = passport_1.default;
+//# sourceMappingURL=passport.js.map

@@ -10,3 +10,4 @@ const mongoose_1 = __importDefault(require("mongoose"));
 async function connect() {
     return mongoose_1.default.connect(process.env.MONGO_URI);
 }
+//# sourceMappingURL=mongo-controller.js.map
