@@ -28,3 +28,4 @@ async function requestDeleteUser(req, res) {
     await (0, user_model_1.deleteUser)(req.params.id);
     res.status(204).end();
 }
+//# sourceMappingURL=user_controller.js.map

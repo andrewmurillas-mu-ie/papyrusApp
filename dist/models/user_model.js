@@ -69,3 +69,4 @@ async function updateUser(userId, user) {
 async function deleteUser(userId) {
     await UserModel.findByIdAndDelete(userId);
 }
+//# sourceMappingURL=user_model.js.map

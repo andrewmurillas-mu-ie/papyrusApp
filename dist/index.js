@@ -27,3 +27,4 @@ app.use("/", workspace_routes_1.default);
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+//# sourceMappingURL=index.js.map

@@ -12,3 +12,4 @@ router.post('/user', user_controller_1.requestCreateUser);
 router.put('/user/:id', user_controller_1.requestUpdateUser);
 router.delete('/user/:id', user_controller_1.requestDeleteUser);
 exports.default = router;
+//# sourceMappingURL=user_routes.js.map

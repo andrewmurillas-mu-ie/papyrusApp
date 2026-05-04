@@ -32,3 +32,4 @@ router.get("/failure", (_req, res) => {
     res.status(401).json({ error: "GitHub authentication failed" });
 });
 exports.default = router;
+//# sourceMappingURL=auth_routes.js.map
