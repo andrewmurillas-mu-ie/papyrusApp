@@ -1,79 +1,123 @@
-import { NavLink, NavLinkRenderProps, Outlet } from "react-router-dom";
-import useAuth from "../context/AuthContext.tsx";
-import useTheme from "../context/ThemeContext.tsx";
-import { ReactElement } from "react";
+import { NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+
 
 const navItems: [string, string][] = [
-  ["Dashboard", "/dashboard"],
-  ["Workspace", "/workspace"],
-  ["Editor", "/editor"],
-  ["Templates", "/templates"],
-  ["Settings", "/settings"],
+  ['Dashboard', '/dashboard'],
+  ['Workspace', '/workspace'],
+  ['Editor', '/editor'],
+  ['Templates', '/templates'],
+  ['Settings', '/settings'],
 ];
 
-export default function AppLayout(): ReactElement {
+
+export default function AppLayout(): React.ReactElement {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
+        {/* header: logo + name + subtitle + theme toggle */}
         <div
+          className="sidebar-header"
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: "0.75rem",
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
           }}
         >
-          <div>
-            <div className="brand-mark">P</div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+            }}
+          >
+            <div className="brand-mark">
+              📜
+              </div>
             <div className="brand-copy">
-              <h1>Papyrus</h1>
-              <p>Focused workspace</p>
+              <h1 style={{ margin: 0 }}>Papyrus</h1>
+              <p
+                className="muted"
+                style={{
+                  margin: 0,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Focused workspace
+              </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-          >
-            <span>{theme === "coffee-dark" ? "☕" : "🌤️"}</span>
-            <span>{theme === "coffee-dark" ? "Dark" : "Light"}</span>
-          </button>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+            >
+              <span>{theme === 'coffee-dark' ? '☕' : '🌤️'}</span>
+              <span>{theme === 'coffee-dark' ? 'Dark' : 'Light'}</span>
+            </button>
+          </div>
         </div>
 
+
+        {/* nav in the middle */}
         <nav className="nav-list">
-          {navItems.map(
-            ([label, path]: [string, string]): ReactElement => (
-              <NavLink
-                key={path}
-                to={path}
-                className={({ isActive }: NavLinkRenderProps): string =>
-                  `nav-link ${isActive ? "active" : ""}`
-                }
-              >
-                {label}
-              </NavLink>
-            ),
-          )}
+          {navItems.map(([label, path]) => (
+            <NavLink
+              key={path}
+              to={path}
+              className={({ isActive }) =>
+                `nav-link ${isActive ? 'active' : ''}`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
         </nav>
 
+
+        {/* footer: user + logout */}
         <div className="sidebar-footer">
-          <div className="user-pill">
-            <div className="avatar-circle">{user?.name?.[0] || "P"}</div>
+          <div
+            className="user-pill"
+            style={{ textAlign: 'left', justifyContent: 'flex-start' }}
+          >
+            <div className="avatar-circle">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user?.fullName || 'User avatar'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 'inherit',
+                    objectFit: 'cover',
+                  }}
+                />
+              ) : (
+                (user?.fullName?.[0] || 'P')
+              )}
+            </div>
             <div>
-              <p>{user?.name || "Papyrus User"}</p>
-              <span>{user?.email || "No email"}</span>
+              <p>{user?.fullName || 'Papyrus User'}</p>
             </div>
           </div>
+
+
           <button className="ghost-button" onClick={logout}>
             Log out
           </button>
         </div>
       </aside>
+
 
       <main className="main-panel">
         <Outlet />

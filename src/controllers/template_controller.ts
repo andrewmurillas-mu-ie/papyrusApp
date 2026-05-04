@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
-import Block from "../models/block_model";
-import { getBlock, deleteBlock } from "../models/block_model";
-import Page, { createPage } from "../models/page_model";
+import Block, {
+  getBlock,
+  deleteBlock,
+  createBlock,
+} from "../models/block_model";
 
 export async function requestTemplate(
   req: Request,
@@ -15,9 +17,9 @@ export async function requestCreateTemplate(
   req: Request,
   res: Response,
 ): Promise<void> {
-  const page: Page = req.body;
-  await createPage(page);
-  res.status(201).json(page);
+  const block: Block = req.body;
+  await createBlock(block);
+  res.status(201).json(block);
 }
 
 export async function requestDeleteTemplate(

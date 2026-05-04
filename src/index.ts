@@ -11,7 +11,12 @@ import "./auth/passport";
 const app: Application = express();
 const PORT: number = (process.env.PORT as unknown as number) || 3000;
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(
+  cors({
+    origin: "http://localhost:5174",
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use("/auth", authRouter);
 app.use("/", userRouter);

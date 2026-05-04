@@ -1,8 +1,12 @@
-import { Navigate, Outlet } from "react-router-dom";
-import useAuth from "../context/AuthContext.tsx";
-import { ReactElement } from "react";
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-export default function ProtectedRoute(): ReactElement {
-  const { user } = useAuth();
+export default function ProtectedRoute(): React.ReactElement {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="auth-shell">Checking session...</div>;
+  }
+
   return user ? <Outlet /> : <Navigate to="/login" replace />;
 }

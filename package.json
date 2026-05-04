@@ -19,7 +19,9 @@
   },
   "private": true,
   "dependencies": {
+    "@types/axios": "^0.9.36",
     "@types/cors": "^2.8.19",
+    "axios": "^1.16.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

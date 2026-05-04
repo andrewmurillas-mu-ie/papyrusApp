@@ -1,145 +1,152 @@
-import React, {
-  createContext,
-  ReactElement,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { api } from "../api/client";
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 
-export interface AuthUser {
-  id: string;
-  name: string;
+interface User {
+  _id: string;
+  fullName: string;
   email: string;
+  githubId: string;
   avatarUrl: string;
   createdAt: string;
   updatedAt: string;
+  role: 'admin' | 'user';
 }
 
-interface AuthContextValue {
-  user: AuthUser | null;
-  setUser: (user: AuthUser | null) => void;
+interface AuthContextType {
+  user: User | null;
+  setUser: (user: User | null) => void;
   loading: boolean;
-  login: (
-    email: string,
-    password: string,
-  ) => Promise<{ ok: boolean; mode: string }>;
-  loginWithToken: (token: string) => void;
-  register: (form: RegisterForm) => Promise<{ ok: boolean; mode: string }>;
+  login: (email: string, password: string) => Promise<{ ok: boolean; mode?: string }>;
+  register: (data: { name: string; email: string; password: string }) => Promise<{ ok: boolean; mode?: string }>;
+  loginWithGithubToken: (token: string) => Promise<{ ok: boolean; mode?: string }>;
   logout: () => void;
 }
 
-interface RegisterForm {
-  name: string;
-  email: string;
-  password: string;
+const AuthContext = createContext<AuthContextType | null>(null);
+
+const decodeJwt = (token: string): any => {
+  try {
+    const [, payloadBase64] = token.split('.');
+    const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(payloadJson);
+  } catch {
+    return null;
+  }
+};
+
+interface AuthProviderProps {
+  children: ReactNode;
 }
 
-const AuthContext: React.Context<AuthContextValue | null> =
-  createContext<AuthContextValue | null>(null);
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export function AuthProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}): ReactElement<any, any> {
-  const [user, setUser] = useState<AuthUser | null>((): AuthUser | null => {
-    const raw: string | null = localStorage.getItem("papyrus_user");
-    return raw ? JSON.parse(raw) : null;
-  });
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const raw = localStorage.getItem('papyrus_user');
+    if (raw) {
+      try {
+        setUser(JSON.parse(raw));
+      } catch {
+        localStorage.removeItem('papyrus_user');
+      }
+    }
+    setLoading(false);
+  }, []);
 
-  useEffect((): void => {
+  useEffect(() => {
     if (user) {
-      localStorage.setItem("papyrus_user", JSON.stringify(user));
+      localStorage.setItem('papyrus_user', JSON.stringify(user));
     } else {
-      localStorage.removeItem("papyrus_user");
+      localStorage.removeItem('papyrus_user');
     }
   }, [user]);
 
-  const login: (
-    email: string,
-    password: string,
-  ) => Promise<{ ok: boolean; mode: string }> = async (
-    email: string,
-    password: string,
-  ): Promise<{ ok: boolean; mode: string }> => {
+  const login = async (email: string, password: string): Promise<{ ok: boolean; mode?: string }> => {
     setLoading(true);
     try {
-      const { data } = await api.post("/auth/login", { email, password });
-      localStorage.setItem("papyrus_token", data.token);
-      setUser({
-        id: "",
-        name: data.user.name,
-        email: data.user.email,
-        avatarUrl: data.user.avatarUrl,
-        createdAt: "",
-        updatedAt: "",
-      });
-      return { ok: true, mode: "email" };
+      const demoUser: User = {
+        _id: 'demo-user',
+        fullName: email.split('@')[0],
+        email,
+        githubId: 'demo-github-id',
+        avatarUrl: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        role: 'user',
+      };
+      localStorage.setItem('papyrus_token', `local-dev-token:${password.length}`);
+      setUser(demoUser);
+      return { ok: true, mode: 'placeholder' };
     } finally {
       setLoading(false);
     }
   };
 
-  const loginWithToken: (token: string) => void = (token: string): void => {
-    localStorage.setItem("papyrus_token", token);
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    setUser({
-      id: "",
-      name: payload.name ?? "",
-      email: payload.email ?? "",
-      avatarUrl: payload.avatarUrl ?? "",
-      createdAt: payload.createdAt ?? "",
-      updatedAt: payload.updatedAt ?? "",
-    });
-  };
-
-  const register: ({ name, email, password }: RegisterForm) => Promise<{
-    ok: boolean;
-    mode: string;
-  }> = async ({
+  const register = async ({
     name,
     email,
     password,
-  }: RegisterForm): Promise<{ ok: true; mode: string }> => {
+  }: {
+    name: string;
+    email: string;
+    password: string;
+  }): Promise<{ ok: boolean; mode?: string }> => {
     setLoading(true);
     try {
-      const { data } = await api.post("/auth/register", {
-        name,
+      const newUser: User = {
+        _id: 'local-demo-user',
+        fullName: name,
         email,
-        password,
-      });
-      localStorage.setItem("papyrus_token", data.token);
-      setUser({
-        id: "",
-        name: data.user.name,
-        email: data.user.email,
-        avatarUrl: data.user.avatarUrl,
-        createdAt: "",
-        updatedAt: "",
-      });
-      return { ok: true, mode: "email" };
+        githubId: 'local-demo-github-id',
+        avatarUrl: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        role: 'user',
+      };
+      localStorage.setItem('papyrus_token', `local-dev-token:${password.length}`);
+      setUser(newUser);
+      return { ok: true, mode: 'placeholder' };
     } finally {
       setLoading(false);
     }
   };
 
-  const logout: () => void = (): void => {
-    localStorage.removeItem("papyrus_token");
-    localStorage.removeItem("papyrus_user");
+  const loginWithGithubToken = async (token: string): Promise<{ ok: boolean; mode?: string }> => {
+    const payload = decodeJwt(token);
+    if (!payload) return { ok: false };
+
+    const githubUser: User = {
+      _id: payload._id,
+      fullName: payload.fullName,
+      email: payload.email || `${payload.githubId}@github.local`,
+      githubId: payload.githubId,
+      avatarUrl: payload.avatarUrl || '',
+      createdAt: payload.createdAt || new Date().toISOString(),
+      updatedAt: payload.updatedAt || new Date().toISOString(),
+      role: payload.role || 'user',
+    };
+
+    localStorage.setItem('papyrus_token', token);
+    localStorage.setItem('papyrus_user', JSON.stringify(githubUser));
+    setUser(githubUser);
+
+    return { ok: true, mode: 'github' };
+  };
+
+  const logout = () => {
+    localStorage.removeItem('papyrus_token');
+    localStorage.removeItem('papyrus_user');
     setUser(null);
   };
 
-  const value: AuthContextValue = useMemo(
-    (): AuthContextValue => ({
+  const value = useMemo(
+    () => ({
       user,
       setUser,
       loading,
       login,
-      loginWithToken,
       register,
+      loginWithGithubToken,
       logout,
     }),
     [user, loading],
@@ -148,8 +155,8 @@ export function AuthProvider({
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export default function useAuth(): AuthContextValue {
-  const context: AuthContextValue | null = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within an AuthProvider");
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }

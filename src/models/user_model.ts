@@ -3,6 +3,7 @@ import mongoose, { Model, Schema } from "mongoose";
 export default interface User {
   fullName: string;
   githubId: string;
+  email: string | null;
   passwordHash?: string;
   role: "admin" | "user";
   avatarUrl: string;
@@ -13,6 +14,7 @@ export default interface User {
 const UserSchema = new Schema<User>({
   fullName: { type: String, required: true },
   githubId: { type: String, required: true, unique: true },
+  email: { type: String, required: false },
   passwordHash: { type: String },
   role: { type: String, enum: ["admin", "user"], default: "user" },
   avatarUrl: { type: String, required: true },

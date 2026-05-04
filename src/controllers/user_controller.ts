@@ -5,7 +5,7 @@ import User, {
   getAllUsers,
   getUser,
   updateUser,
-} from "../models/user_model.js";
+} from "../models/user_model";
 
 export async function requestUser(req: Request, res: Response): Promise<void> {
   const user: User | null = await getUser(req.params.id as string);

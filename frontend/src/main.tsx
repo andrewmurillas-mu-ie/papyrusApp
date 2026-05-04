@@ -1,13 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import App from './App.tsx';
-import { AuthProvider } from './context/AuthContext.tsx';
-import { ThemeProvider } from './context/ThemeContext.tsx';
+import App from './App';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 import './styles/app.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const root = document.getElementById('root');
+if (root) {
+  ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <BrowserRouter>
       <ThemeProvider>
@@ -16,5 +18,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
-  </React.StrictMode>,
-);
+  </React.StrictMode>
+  );
+}

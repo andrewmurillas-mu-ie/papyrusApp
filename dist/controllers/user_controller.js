@@ -5,26 +5,26 @@ exports.requestAllUsers = requestAllUsers;
 exports.requestCreateUser = requestCreateUser;
 exports.requestUpdateUser = requestUpdateUser;
 exports.requestDeleteUser = requestDeleteUser;
-const user_model_js_1 = require("../models/user_model.js");
+const user_model_1 = require("../models/user_model");
 async function requestUser(req, res) {
-    const user = await (0, user_model_js_1.getUser)(req.params.id);
+    const user = await (0, user_model_1.getUser)(req.params.id);
     res.json(user);
 }
 async function requestAllUsers(_, res) {
-    const users = await (0, user_model_js_1.getAllUsers)();
+    const users = await (0, user_model_1.getAllUsers)();
     res.json(users);
 }
 async function requestCreateUser(req, res) {
     const user = req.body;
-    await (0, user_model_js_1.createUser)(user);
+    await (0, user_model_1.createUser)(user);
     res.status(201).json(user);
 }
 async function requestUpdateUser(req, res) {
     const user = req.body;
-    await (0, user_model_js_1.updateUser)(req.params.id, user);
+    await (0, user_model_1.updateUser)(req.params.id, user);
     res.json(user);
 }
 async function requestDeleteUser(req, res) {
-    await (0, user_model_js_1.deleteUser)(req.params.id);
+    await (0, user_model_1.deleteUser)(req.params.id);
     res.status(204).end();
 }

@@ -573,13 +573,38 @@ label {
 .rte-toolbar--top {
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 100;
     background: var(--surface-2);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .rte-toolbar--floating {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    z-index: 9999 !important; /* Force high z-index to appear above all other elements */
+    position: relative !important;
+}
+
+/* Target tippy tooltip container directly */
+.tippy-box[data-theme~='bubble-menu'] {
+    z-index: 9999 !important;
+}
+
+.tippy[data-state~='visible'] {
+    z-index: 9999 !important;
+}
+
+/* More aggressive targeting for bubble menu */
+div[data-tippy-root] {
+    z-index: 9999 !important;
+}
+
+.tippy-popper {
+    z-index: 9999 !important;
+}
+
+/* Target any element containing bubble menu */
+[class*="tippy"] {
+    z-index: 9999 !important;
 }
 
 .rte-btn {
