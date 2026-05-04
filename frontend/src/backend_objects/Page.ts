@@ -4,8 +4,10 @@ export default interface Page {
   workspace: string;
   createdBy: string;
   blocks: string[];
+  contentHtml: string;
+  contentText: string;
   isShared: boolean;
   currentVersion: number;
-  createdAt: Date;
-  lastUpdate: Date;
+  createdAt: string;
+  lastUpdate: string;
 }
