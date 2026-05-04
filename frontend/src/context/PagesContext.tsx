@@ -12,20 +12,18 @@ interface PagesProviderProps {
 export function PagesProvider({ children }: PagesProviderProps) {
   const [pages, setPages] = useState<WorkspacePage[]>([]);
   const [currentPage, setCurrentPage] = useState<WorkspacePage | null>(null);
-  const [workspaceState, setWorkspaceState] = useState<any>(null);
   const [expandedPages, setExpandedPages] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-
-  // Get workspace context safely inside useEffect
-  useEffect(() => {
-    try {
-      const workspace = useWorkspace();
-      setWorkspaceState(workspace.currentWorkspace);
-    } catch (error) {
-      // WorkspaceProvider not available yet
-      console.log('WorkspaceProvider not yet available');
-    }
-  }, []);
+  
+  // Try to get workspace context, but handle the error gracefully
+  let currentWorkspace = null;
+  try {
+    const workspace = useWorkspace();
+    currentWorkspace = workspace.currentWorkspace;
+  } catch (error) {
+    // WorkspaceProvider not available yet, use null
+    currentWorkspace = null;
+  }
 
   // Load expanded state from localStorage (UI state only)
   useEffect(() => {
@@ -48,14 +46,11 @@ export function PagesProvider({ children }: PagesProviderProps) {
     }
   }, [expandedPages]);
 
-  // Load initial data from API
+  // Load initial data from API (simplified)
   useEffect(() => {
     const loadPages = async () => {
       try {
-        console.log('Loading pages from API...');
-        // For now, load all pages (will be updated to load by workspace)
         const loadedPages = await pageService.getAll();
-        console.log('Pages loaded:', loadedPages);
         setPages(loadedPages);
         
         // Set current page to first available page
@@ -76,9 +71,7 @@ export function PagesProvider({ children }: PagesProviderProps) {
   // Load pages for current workspace
   const loadWorkspacePages = useCallback(async (workspaceId: string) => {
     try {
-      console.log('Loading pages for workspace:', workspaceId);
       const loadedPages = await pageService.getAll({ workspaceId });
-      console.log('Workspace pages loaded:', loadedPages);
       setPages(loadedPages);
       
       // Set current page to first available page in workspace
@@ -93,14 +86,14 @@ export function PagesProvider({ children }: PagesProviderProps) {
 
   // Load pages when current workspace changes
   useEffect(() => {
-    if (workspaceState) {
-      loadWorkspacePages(workspaceState.id);
+    if (currentWorkspace) {
+      loadWorkspacePages(currentWorkspace.id);
     } else {
       // Clear pages when no workspace is selected
       setPages([]);
       setCurrentPage(null);
     }
-  }, [workspaceState, loadWorkspacePages]);
+  }, [currentWorkspace, loadWorkspacePages]);
 
   // Getters
   const getPageById = useMemo(() => (id: string): WorkspacePage | undefined => {
@@ -135,36 +128,20 @@ export function PagesProvider({ children }: PagesProviderProps) {
   }, [pages]);
 
   // Actions
-  const createPage = useCallback(async (data: CreatePageData): Promise<WorkspacePage> => {
+  const createPage = useMemo(() => async (data: CreatePageData): Promise<WorkspacePage> => {
     try {
-      console.log('Creating page with data:', data);
-      
-      // Require workspaceId for page creation
-      if (!data.workspaceId) {
-        throw new Error('workspaceId is required for page creation');
-      }
-      
-      const newPage = await pageService.createPage({
+      const pageData = {
         title: data.title || 'Untitled',
         icon: data.icon || '📄',
         content: data.content || '',
-        workspaceId: data.workspaceId,
-        parentId: data.parentId || null,
-        isFavorite: false,
-      });
+        contentHtml: data.contentHtml || data.content || '',
+        contentText: data.contentText || (data.content || '').replace(/<[^>]*>/g, ''),
+      };
       
-      console.log('Page created successfully:', newPage);
+      const newPage = await pageService.createPage(pageData);
+      
+      // Update local state with the created page
       setPages(prev => [...prev, newPage]);
-      
-      // If creating as a child, expand the parent
-      const parentId = data.parentId;
-      if (parentId) {
-        setExpandedPages(prev => {
-          const newSet = new Set(prev);
-          newSet.add(parentId);
-          return newSet;
-        });
-      }
       
       return newPage;
     } catch (error) {
@@ -281,7 +258,7 @@ export function PagesProvider({ children }: PagesProviderProps) {
       // State
       pages,
       currentPage,
-      currentWorkspace: workspaceState,
+      currentWorkspace,
       loading,
       expandedPages,
       
@@ -309,7 +286,7 @@ export function PagesProvider({ children }: PagesProviderProps) {
     [
       pages,
       currentPage,
-      workspaceState,
+      currentWorkspace,
       loading,
       expandedPages,
       getPageById,

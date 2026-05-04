@@ -144,88 +144,103 @@ export default function DashboardPage(): React.ReactElement {
                     </div>
                     {pagesLoading ? (
                         <div className="empty-state">
-                            <p>Loading recent pages...</p>
+                            <h3>Loading Pages</h3>
+                            <p>Your pages are being loaded...</p>
                         </div>
                     ) : recentPages.length === 0 ? (
                         <div className="empty-state">
-                            <p>No recent pages yet.</p>
-                            <span>
-                Create your first page to get started with the "New Page" button in the sidebar.
-              </span>
-                            <div style={{ marginTop: '1rem' }}>
-                                <Link className="primary-button" to="/editor">
-                                    Create First Page
-                                </Link>
-                            </div>
+                            <h3>No Pages Yet</h3>
+                            <p>Create your first page to get started with Papyrus!</p>
+                            <Link to="/editor" className="primary-button">
+                                Create First Page
+                            </Link>
                         </div>
                     ) : (
-                        <div className="list-stack">
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
                             {recentPages.map((page) => (
-                                <Link
-                                    key={page.id}
-                                    to={`/editor/${page.id}`}
-                                    className="list-row"
-                                    style={{ textDecoration: 'none', color: 'inherit' }}
-                                >
-                                    <div className="avatar-circle">
-                                        {page.icon || '📄'}
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <strong style={{ display: 'block', marginBottom: '0.25rem' }}>
-                                            {page.title}
-                                        </strong>
-                                        <p className="muted" style={{ fontSize: '12px', margin: 0 }}>
-                                            Updated {formatDate(page.updatedAt)}
-                                        </p>
-                                    </div>
-                                </Link>
+                                <li key={page.id} style={{ marginBottom: '12px', padding: '12px', border: '1px solid #ddd', borderRadius: '4px' }}>
+                                    <Link to={`/editor/${page.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <strong>{page.title}</strong>
+                                                {page.icon && <span style={{ marginLeft: '8px' }}>{page.icon}</span>}
+                                                {page.workspaceId ? (
+                                                    <small style={{ marginLeft: '8px', color: '#666' }}>• Workspace</small>
+                                                ) : (
+                                                    <small style={{ marginLeft: '8px', color: '#666' }}>• Personal</small>
+                                                )}
+                                            </div>
+                                            <small style={{ color: '#666' }}>
+                                                {new Date(page.updatedAt).toLocaleDateString()}
+                                            </small>
+                                        </div>
+                                    </Link>
+                                </li>
                             ))}
-                        </div>
+                        </ul>
                     )}
                 </article>
             </div>
 
-            <article className="panel-card">
-                <div className="panel-header">
-                    <h3>Users from backend</h3>
-                    <span>{loading ? 'Loading...' : `${users.length} loaded`}</span>
+            <div className="panel-card">
+                <h2>Quick Actions</h2>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <Link to="/editor" className="secondary-button">
+                        Create New Page
+                    </Link>
+                    <Link to="/templates" className="secondary-button">
+                        Browse Templates
+                    </Link>
+                    <Link to="/workspace" className="secondary-button">
+                        Manage Workspace
+                    </Link>
                 </div>
+            </div>
 
-                {error ? <p className="form-error">{error}</p> : null}
+            <div className="panel-card">
+                <h2>Page Statistics</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span>Total Pages</span>
+                    <strong>{pages.length}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span>Personal Pages</span>
+                    <strong>{pages.filter(p => !p.workspaceId).length}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Workspace Pages</span>
+                    <strong>{pages.filter(p => p.workspaceId).length}</strong>
+                </div>
+            </div>
 
-                {!loading && !users.length && !error ? (
-                    <div className="empty-state">
-                        <p>No users in the database yet.</p>
-                        <span>
-              Create one through the backend or use Settings later when update
-              flows are finalized.
-            </span>
-                    </div>
-                ) : null}
+            <div className="panel-card">
+                <h2>Users from backend</h2>
+                <span>{loading ? 'Loading...' : `${users.length} loaded`}</span>
+            </div>
 
-                <div className="list-stack">
-                    {sortedUsers.map((item, index) => {
-                        const isCurrent = user?._id && item._id === user._id;
-                        return (
-                            <div
-                                key={`${item.email}-${index}`}
-                                className="list-row"
-                                style={
-                                    isCurrent ? { borderColor: 'var(--primary)' } : undefined
-                                }
-                            >
-                                <div className="avatar-circle">
-                                    {item.fullName?.[0] || 'U'}
-                                </div>
-                                <div>
-                                    <strong>{item.fullName}</strong>
-                                    <p className="muted">{item.email || 'No email set'}</p>
-                                </div>
+            {error ? <p className="form-error">{error}</p> : null}
+
+            {!loading && !users.length && !error ? (
+                <div className="empty-state">
+                    <p>No users in the database yet.</p>
+                    <span>
+                        Create one through the backend or use Settings later when update
+                        flows are finalized.
+                    </span>
+                </div>
+            ) : (
+                <div className="panel-card">
+                    <h2>Users from backend</h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {sortedUsers.map((item) => (
+                            <div key={item._id} style={{ padding: '12px', border: '1px solid #ddd', borderRadius: '4px' }}>
+                                <strong>{item.fullName}</strong>
+                                <p className="muted">{item.email || 'No email set'}</p>
                             </div>
-                        );
-                    })}
+                        ))}
+                    </div>
                 </div>
-            </article>
+            )}
         </section>
     );
 }

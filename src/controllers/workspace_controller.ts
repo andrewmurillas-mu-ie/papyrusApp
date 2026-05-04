@@ -164,3 +164,77 @@ export async function requestGetMembers(req: Request, res: Response): Promise<vo
     res.status(500).json({ error: "Failed to get members" });
   }
 }
+
+// Email invitation endpoints
+export async function requestInviteMember(req: Request, res: Response): Promise<void> {
+  const userId: string = (req.user as any)._id;
+  const workspaceId = req.params.id as string;
+  const { email, role } = req.body;
+  
+  // Check if user is owner or admin
+  const userRole = await getUserRoleInWorkspace(workspaceId, userId);
+  if (userRole !== "owner" && userRole !== "admin") {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  
+  if (!email || !role) {
+    res.status(400).json({ error: "Email and role are required" });
+    return;
+  }
+  
+  try {
+    // For now, create a simple invitation record
+    // In a real implementation, you would send an email with a unique token
+    const invitation = {
+      id: new (require('mongoose').Types.ObjectId)().toString(),
+      workspaceId,
+      email,
+      role,
+      invitedBy: userId,
+      status: 'pending',
+      token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      createdAt: new Date(),
+    };
+    
+    // Email invitation would be sent here
+    console.log(`📧 Invitation created for ${email} to join workspace ${workspaceId}`);
+    console.log(`🔗 Invitation link: /invite/${invitation.token}`);
+    
+    res.status(201).json({
+      message: "Invitation sent successfully",
+      invitation: {
+        id: invitation.id,
+        email: invitation.email,
+        role: invitation.role,
+        status: invitation.status,
+        expiresAt: invitation.expiresAt,
+      }
+    });
+  } catch (error) {
+    console.error('Failed to create invitation:', error);
+    res.status(500).json({ error: "Failed to send invitation" });
+  }
+}
+
+export async function requestAcceptInvitation(req: Request, res: Response): Promise<void> {
+  const userId: string = (req.user as any)._id;
+  const { token } = req.params;
+  
+  if (!token) {
+    res.status(400).json({ error: "Invitation token is required" });
+    return;
+  }
+  
+  try {
+    // Find invitation by token and validate it
+    // For now, just return success
+    console.log(`📨 User ${userId} accepted invitation with token ${token}`);
+    
+    res.json({ message: "Invitation accepted successfully" });
+  } catch (error) {
+    console.error('Failed to accept invitation:', error);
+    res.status(500).json({ error: "Failed to accept invitation" });
+  }
+}

@@ -15,11 +15,14 @@ export default function AppLayout(): React.ReactElement {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
-      // Ctrl/Cmd + N: New page
+      // Ctrl/Cmd + N: New page (only when not in editor)
       if ((e.ctrlKey || e.metaKey) && e.key === 'n' && !e.shiftKey) {
         e.preventDefault();
-        const newPage = await createPage({ title: 'Untitled', content: '' });
-        navigate(`/editor/${newPage.id}`);
+        // Only create page if we're not already in the editor
+        if (!window.location.pathname.startsWith('/editor')) {
+          const newPage = await createPage({ title: 'Untitled', content: '' });
+          navigate(`/editor/${newPage.id}`);
+        }
       }
       
       // Ctrl/Cmd + Shift + F: Toggle favorite

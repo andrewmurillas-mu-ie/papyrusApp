@@ -177,15 +177,12 @@ export default function TemplatesPage(): React.ReactElement {
             const htmlContent = contentToHtml(template.content);
             console.log('Generated HTML content:', htmlContent);
             
-            if (!currentWorkspace) {
-                console.error('No workspace selected');
-                return;
-            }
-            
+            // Create page without workspace requirement for demo
             const newPage = await createPage({
                 title: template.name,
                 content: htmlContent,
-                workspaceId: currentWorkspace.id
+                contentHtml: htmlContent,
+                contentText: htmlContent.replace(/<[^>]*>/g, '')
             });
             
             console.log('Page created successfully:', newPage);

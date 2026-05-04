@@ -50,30 +50,20 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [invitations, setInvitations] = useState<any[]>([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check authentication status and load workspaces
+  // Load workspaces on mount
   useEffect(() => {
-    const checkAuthAndLoad = async () => {
+    const loadWorkspacesAndInvitations = async () => {
       try {
-        // Try to get user from localStorage or token
-        const token = localStorage.getItem('token');
-        if (token) {
-          setIsAuthenticated(true);
-          // Load workspaces if authenticated
-          await loadWorkspaces();
-          await loadInvitations();
-        } else {
-          setIsAuthenticated(false);
-          setLoading(false);
-        }
+        await loadWorkspaces();
+        await loadInvitations();
       } catch (error) {
-        console.error('Error checking authentication:', error);
+        console.error('Failed to load workspaces:', error);
         setLoading(false);
       }
     };
 
-    checkAuthAndLoad();
+    loadWorkspacesAndInvitations();
   }, []);
 
   const loadWorkspaces = useCallback(async () => {
@@ -82,8 +72,25 @@ export function WorkspaceProvider({ children }: WorkspaceProviderProps) {
       const loadedWorkspaces = await workspaceService.getAll();
       setWorkspaces(loadedWorkspaces);
       
-      // Set current workspace to first available if none selected
-      if (!currentWorkspace && loadedWorkspaces.length > 0) {
+      // Create default workspace if user has none
+      if (loadedWorkspaces.length === 0) {
+        try {
+          const defaultWorkspace = await workspaceService.createWorkspace({
+            name: 'Personal Workspace',
+            description: 'Your personal workspace',
+            icon: '🏠',
+            settings: {
+              allowPublicSharing: false,
+              defaultMemberRole: 'editor'
+            }
+          });
+          setWorkspaces([defaultWorkspace]);
+          setCurrentWorkspace(defaultWorkspace);
+        } catch (error) {
+          console.error('Failed to create default workspace:', error);
+        }
+      } else if (!currentWorkspace) {
+        // Set current workspace to first available if none selected
         setCurrentWorkspace(loadedWorkspaces[0]);
       }
     } catch (error) {

@@ -2,7 +2,7 @@ export interface WorkspacePage {
   id: string;
   title: string;
   icon?: string;
-  workspaceId: string;
+  workspaceId: string | null;
   parentId: string | null;
   content: string;
   coverUrl?: string;
@@ -19,7 +19,10 @@ export interface PageTreeItem extends WorkspacePage {
   isExpanded: boolean;
 }
 
-export type CreatePageData = Pick<WorkspacePage, 'workspaceId'> & Partial<Pick<WorkspacePage, 'title' | 'icon' | 'parentId' | 'content'>>;
+export type CreatePageData = Partial<Pick<WorkspacePage, 'workspaceId' | 'title' | 'icon' | 'parentId' | 'content'>> & {
+  contentHtml?: string;
+  contentText?: string;
+};
 export type UpdatePageData = Partial<Pick<WorkspacePage, 'title' | 'icon' | 'content' | 'coverUrl' | 'isFavorite' | 'parentId'>>;
 
 export interface Workspace {

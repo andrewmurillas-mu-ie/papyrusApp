@@ -4,6 +4,7 @@ import { WorkspacePage } from "../types/page";
 export interface SavePagePayload {
   title: string;
   contentHtml: string;
+  contentText?: string;
 }
 
 const pageService = {
@@ -27,7 +28,7 @@ const pageService = {
     id: string,
     payload: Partial<WorkspacePage> | SavePagePayload,
   ): Promise<WorkspacePage> => {
-    const { data } = await api.put(`/page/${id}`, payload);
+    const { data } = await api.patch(`/page/${id}`, payload);
     return data;
   },
 

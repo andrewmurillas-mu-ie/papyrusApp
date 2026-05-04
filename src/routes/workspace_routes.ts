@@ -6,6 +6,8 @@ import {
   requestDeleteWorkspace,
   requestUpdateWorkspace,
   requestWorkspace,
+  requestInviteMember,
+  requestAcceptInvitation,
 } from "../controllers/workspace_controller";
 
 const router: Router = express.Router();
@@ -15,5 +17,9 @@ router.get("/workspace/:id", requireAuth, requestWorkspace);
 router.post("/workspace", requireAuth, requestCreateWorkspace);
 router.put("/workspace/:id", requireAuth, requestUpdateWorkspace);
 router.delete("/workspace/:id", requireAuth, requestDeleteWorkspace);
+
+// Invitation routes
+router.post("/workspace/:id/invite", requireAuth, requestInviteMember);
+router.post("/invite/:token/accept", requireAuth, requestAcceptInvitation);
 
 export default router;
