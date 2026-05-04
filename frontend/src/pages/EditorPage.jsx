@@ -37,6 +37,30 @@ function getInitialContent(template) {
   }
 }
 
+function escapeHtmlForEditor(value) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function plainTextToEditorHtml(text) {
+  const paragraphs = text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (!paragraphs.length) {
+    return '<p></p>';
+  }
+
+  return paragraphs
+    .map((paragraph) => `<p>${escapeHtmlForEditor(paragraph)}</p>`)
+    .join('');
+}
+
 export default function EditorPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -181,6 +205,27 @@ export default function EditorPage() {
     return () => clearInterval(interval);
   }, [title, template, user?.id]);
 
+  const handleApplyCorrectedText = () => {
+    if (!grammarResult?.correctedText) return;
+
+    const nextHtml = plainTextToEditorHtml(grammarResult.correctedText);
+    const savedAt = new Date().toISOString();
+
+    setBodyHtml(nextHtml);
+    setLastSaved(savedAt);
+    setGrammarError('');
+    setSearchSyncStatus('Updated editor with corrected text. Syncing soon...');
+
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        title,
+        bodyHtml: nextHtml,
+        lastSaved: savedAt,
+      }),
+    );
+  };
+
   const formattedLastSaved = lastSaved
     ? new Date(lastSaved).toLocaleTimeString('en-GB', {
         hour: '2-digit',
@@ -263,6 +308,15 @@ export default function EditorPage() {
                 rows={5}
               />
             </label>
+
+            <button
+              type="button"
+              className="primary-button"
+              onClick={handleApplyCorrectedText}
+              disabled={!grammarResult.correctedText}
+            >
+              Apply corrected text to editor
+            </button>
 
             {grammarResult.suggestions?.length > 0 && (
               <div>
