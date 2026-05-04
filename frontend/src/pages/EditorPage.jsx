@@ -179,12 +179,31 @@ export default function EditorPage() {
       try {
         setSearchSyncStatus('Syncing page...');
 
-        await savePageForSearch({
+        const savedPage = await savePageForSearch({
           title: title || 'Untitled page',
           contentHtml: currentHtml,
           ownerId: user.id,
           sourceKey: `editor-${user.id}-${template || 'default'}`,
         });
+
+        const generatedTitle = savedPage?.page?.title;
+
+        if (
+          !title.trim() &&
+          generatedTitle &&
+          generatedTitle.toLowerCase() !== 'untitled page'
+        ) {
+          setTitle(generatedTitle);
+
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({
+              title: generatedTitle,
+              bodyHtml: currentHtml,
+              lastSaved: new Date().toISOString(),
+            }),
+          );
+        }
 
         lastSearchSyncRef.current = syncKey;
         setSearchSyncStatus(
