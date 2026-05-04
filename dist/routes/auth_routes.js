@@ -14,16 +14,19 @@ router.get("/github/callback", passport_1.default.authenticate("github", {
 }), (req, res) => {
     const user = req.user;
     const payload = {
-        id: user._id,
+        _id: user._id,
         fullName: user.fullName,
         githubId: user.githubId,
         avatarUrl: user.avatarUrl,
         role: user.role,
+        email: user.email,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     };
     const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET, {
         expiresIn: "7d",
     });
-    res.redirect(`http://localhost:5173/auth/github/callback?token=${token}`);
+    res.redirect(`http://localhost:5174/github/callback?token=${encodeURIComponent(token)}`);
 });
 router.get("/failure", (_req, res) => {
     res.status(401).json({ error: "GitHub authentication failed" });

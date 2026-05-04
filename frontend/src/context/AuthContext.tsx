@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 
 interface User {
-  id: string;
-  name: string;
+  _id: string;
+  fullName: string;
   email: string;
+  githubId: string;
   avatarUrl: string;
   createdAt: string;
   updatedAt: string;
-  role?: string;
+  role: 'admin' | 'user';
 }
 
 interface AuthContextType {
@@ -16,19 +17,16 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ ok: boolean; mode?: string }>;
   register: (data: { name: string; email: string; password: string }) => Promise<{ ok: boolean; mode?: string }>;
-  loginWithGithubToken: (token: string) => { ok: boolean; mode?: string };
+  loginWithGithubToken: (token: string) => Promise<{ ok: boolean; mode?: string }>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Helper to decode JWT payload (no verification, just reading data)
 const decodeJwt = (token: string): any => {
   try {
     const [, payloadBase64] = token.split('.');
-    const payloadJson = atob(
-      payloadBase64.replace(/-/g, '+').replace(/_/g, '/'),
-    );
+    const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
     return JSON.parse(payloadJson);
   } catch {
     return null;
@@ -40,11 +38,20 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(() => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
     const raw = localStorage.getItem('papyrus_user');
-    return raw ? JSON.parse(raw) : null;
-  });
-  const [loading, setLoading] = useState(false);
+    if (raw) {
+      try {
+        setUser(JSON.parse(raw));
+      } catch {
+        localStorage.removeItem('papyrus_user');
+      }
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -58,12 +65,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLoading(true);
     try {
       const demoUser: User = {
-        id: 'local-demo-user',
-        name: 'Papyrus User',
+        _id: 'demo-user',
+        fullName: email.split('@')[0],
         email,
+        githubId: 'demo-github-id',
         avatarUrl: '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        role: 'user',
       };
       localStorage.setItem('papyrus_token', `local-dev-token:${password.length}`);
       setUser(demoUser);
@@ -73,16 +82,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const register = async ({ name, email, password }: { name: string; email: string; password: string }): Promise<{ ok: boolean; mode?: string }> => {
+  const register = async ({
+    name,
+    email,
+    password,
+  }: {
+    name: string;
+    email: string;
+    password: string;
+  }): Promise<{ ok: boolean; mode?: string }> => {
     setLoading(true);
     try {
       const newUser: User = {
-        id: 'local-demo-user',
-        name,
+        _id: 'local-demo-user',
+        fullName: name,
         email,
+        githubId: 'local-demo-github-id',
         avatarUrl: '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        role: 'user',
       };
       localStorage.setItem('papyrus_token', `local-dev-token:${password.length}`);
       setUser(newUser);
@@ -92,28 +111,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  // New: handle GitHub login using the JWT from backend
-  const loginWithGithubToken = (token: string): { ok: boolean; mode?: string } => {
-    console.log('[AuthContext] Processing GitHub token:', token.substring(0, 50) + '...');
+  const loginWithGithubToken = async (token: string): Promise<{ ok: boolean; mode?: string }> => {
     const payload = decodeJwt(token);
-    console.log('[AuthContext] Decoded payload:', payload);
-    if (!payload) {
-      console.log('[AuthContext] Failed to decode token');
-      return { ok: false };
-    }
+    if (!payload) return { ok: false };
 
     const githubUser: User = {
-      id: payload.id,
-      name: payload.fullName,
-      email: payload.email || `${payload.githubId}@github.local`, // Fallback email
+      _id: payload._id,
+      fullName: payload.fullName,
+      email: payload.email || `${payload.githubId}@github.local`,
+      githubId: payload.githubId,
       avatarUrl: payload.avatarUrl || '',
       createdAt: payload.createdAt || new Date().toISOString(),
       updatedAt: payload.updatedAt || new Date().toISOString(),
-      role: payload.role,
+      role: payload.role || 'user',
     };
 
     localStorage.setItem('papyrus_token', token);
+    localStorage.setItem('papyrus_user', JSON.stringify(githubUser));
     setUser(githubUser);
+
     return { ok: true, mode: 'github' };
   };
 

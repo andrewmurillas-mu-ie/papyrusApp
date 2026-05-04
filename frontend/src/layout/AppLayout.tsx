@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
+
 const navItems: [string, string][] = [
   ['Dashboard', '/dashboard'],
   ['Workspace', '/workspace'],
@@ -10,9 +11,11 @@ const navItems: [string, string][] = [
   ['Settings', '/settings'],
 ];
 
+
 export default function AppLayout(): React.ReactElement {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
 
   return (
     <div className="app-shell">
@@ -50,6 +53,7 @@ export default function AppLayout(): React.ReactElement {
             </div>
           </div>
 
+
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
               type="button"
@@ -62,6 +66,7 @@ export default function AppLayout(): React.ReactElement {
             </button>
           </div>
         </div>
+
 
         {/* nav in the middle */}
         <nav className="nav-list">
@@ -78,6 +83,7 @@ export default function AppLayout(): React.ReactElement {
           ))}
         </nav>
 
+
         {/* footer: user + logout */}
         <div className="sidebar-footer">
           <div
@@ -88,7 +94,7 @@ export default function AppLayout(): React.ReactElement {
               {user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
-                  alt={user?.name || 'User avatar'}
+                  alt={user?.fullName || 'User avatar'}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -97,19 +103,21 @@ export default function AppLayout(): React.ReactElement {
                   }}
                 />
               ) : (
-                (user?.name?.[0] || 'P')
+                (user?.fullName?.[0] || 'P')
               )}
             </div>
             <div>
-              <p>{user?.name || 'Papyrus User'}</p>
+              <p>{user?.fullName || 'Papyrus User'}</p>
             </div>
           </div>
+
 
           <button className="ghost-button" onClick={logout}>
             Log out
           </button>
         </div>
       </aside>
+
 
       <main className="main-panel">
         <Outlet />

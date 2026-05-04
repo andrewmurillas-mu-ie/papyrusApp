@@ -19,16 +19,19 @@ router.get(
   (req: Request, res: Response): void => {
     const user = req.user as User & { _id: string };
     const payload = {
-      id: user._id,
+      _id: user._id,
       fullName: user.fullName,
       githubId: user.githubId,
       avatarUrl: user.avatarUrl,
       role: user.role,
+      email: user.email,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     const token: string = jwt.sign(payload, process.env.JWT_SECRET!, {
       expiresIn: "7d",
     });
-    res.redirect(`http://localhost:5173/auth/github/callback?token=${token}`);
+    res.redirect(`http://localhost:5174/github/callback?token=${encodeURIComponent(token)}`);
   },
 );
 

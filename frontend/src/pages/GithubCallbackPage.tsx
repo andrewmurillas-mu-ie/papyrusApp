@@ -1,34 +1,54 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function GithubCallbackPage(): React.ReactElement {
     const location = useLocation();
     const navigate = useNavigate();
-    const { loginWithGithubToken } = useAuth();
+    const { user, loginWithGithubToken } = useAuth();
+    const [hasProcessedToken, setHasProcessedToken] = useState(false);
 
     useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const token = params.get('token');
-        console.log('[GithubCallback] token from query:', token);
+        if (hasProcessedToken) return;
 
-        if (!token) {
-            console.log('[GithubCallback] No token, going to /login');
-            navigate('/login');
-            return;
+        const processToken = async () => {
+            console.log('[GithubCallback] Full URL:', window.location.href);
+            console.log('[GithubCallback] Search params:', location.search);
+            
+            const params = new URLSearchParams(location.search);
+            const token = params.get('token');
+            console.log('[GithubCallback] token from query:', token);
+
+            if (!token) {
+                console.log('[GithubCallback] No token found in URL, going to /login');
+                navigate('/login');
+                return;
+            }
+
+            console.log('[GithubCallback] Token found, attempting login...');
+            const result = await loginWithGithubToken(token);
+            console.log('[GithubCallback] loginWithGithubToken result:', result);
+
+            if (!result.ok) {
+                console.log('[GithubCallback] Login failed, navigating to /login');
+                navigate('/login');
+                return;
+            }
+
+            // Mark that we've processed the token
+            setHasProcessedToken(true);
+        };
+
+        processToken();
+    }, [hasProcessedToken, location.search, loginWithGithubToken, navigate]);
+
+    // Step 2: Navigate AFTER user state has updated
+    useEffect(() => {
+        if (hasProcessedToken && user) {
+            console.log('[GithubCallback] User state updated, navigating to /dashboard');
+            navigate('/dashboard', { replace: true });
         }
-
-        const result = loginWithGithubToken(token);
-        console.log('[GithubCallback] loginWithGithubToken result:', result);
-
-        if (result.ok) {
-            console.log('[GithubCallback] Success, navigating to /dashboard');
-            navigate('/dashboard');
-        } else {
-            console.log('[GithubCallback] Failed, navigating to /login');
-            navigate('/login');
-        }
-    }, []);
+    }, [hasProcessedToken, user, navigate]);
 
     return (
         <div className="auth-shell">

@@ -51,7 +51,7 @@ export default function EditorPage(): React.ReactElement {
     const getEditorHtmlRef = useRef<(() => string) | null>(null);
 
     const storageKey = user
-        ? `papyrus_editor_${user.id}_${template || 'default'}`
+        ? `papyrus_editor_${user._id}_${template || 'default'}`
         : `papyrus_editor_guest_${template || 'default'}`;
 
     // Load from localStorage or template
@@ -157,7 +157,7 @@ export default function EditorPage(): React.ReactElement {
                 <div className="editor-footer">
                     <span className="muted">Last saved: {formattedLastSaved}</span>
                     <span className="muted">
-            Auto-saved for user {user?.name || 'guest'}
+            Auto-saved for user {user?.fullName || 'guest'}
                         {template ? ` · Template: ${template}` : ''}
           </span>
                 </div>

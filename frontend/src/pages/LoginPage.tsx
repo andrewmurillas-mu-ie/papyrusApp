@@ -1,7 +1,4 @@
-import { useNavigate } from 'react-router-dom';
-
 export default function LoginPage(): React.ReactElement {
-    const navigate = useNavigate();
 
     const handleGitHubLogin = () => {
         window.location.href = 'http://localhost:3000/auth/github';

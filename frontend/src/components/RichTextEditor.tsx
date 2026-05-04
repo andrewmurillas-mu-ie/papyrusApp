@@ -25,8 +25,7 @@ export default function RichTextEditor({ initialContent, onReady }: RichTextEdit
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // @ts-ignore - history option exists but not in types
-        // @ts-ignore 
+        strike: false,
       }),
       Strike,
       Highlight.configure({ multicolor: true }),
@@ -47,7 +46,6 @@ export default function RichTextEditor({ initialContent, onReady }: RichTextEdit
           class: 'editor-image',
         },
       }),
-      // @ts-ignore - resizable option exists but not in types
       TableKit.configure({}),
     ],
     content: initialContent || '',
@@ -70,7 +68,7 @@ export default function RichTextEditor({ initialContent, onReady }: RichTextEdit
     editor,
     selector: ({ editor }) => {
       if (!editor) return null;
-      const state = {
+      return {
         isParagraph: editor.isActive('paragraph'),
         isH1: editor.isActive('heading', { level: 1 }),
         isH2: editor.isActive('heading', { level: 2 }),
@@ -81,11 +79,20 @@ export default function RichTextEditor({ initialContent, onReady }: RichTextEdit
         isItalic: editor.isActive('italic'),
         isStrike: editor.isActive('strike'),
       };
-      return state as any;
     },
   });
 
-  const top = topState || {};
+  const top = topState || {} as {
+    isParagraph: boolean;
+    isH1: boolean;
+    isH2: boolean;
+    isBullet: boolean;
+    isOrdered: boolean;
+    isBlockquote: boolean;
+    isBold: boolean;
+    isItalic: boolean;
+    isStrike: boolean;
+  };
 
   const clickBlock =
     (buildChain: () => any) =>
@@ -96,12 +103,20 @@ export default function RichTextEditor({ initialContent, onReady }: RichTextEdit
 
   const applyInlineAndClose = (command: () => void) => {
     command();
-    const { state, dispatch } = editor.view;
-    const { to } = state.selection;
-    // @ts-ignore - Selection constructor typing issue
-    dispatch(
-      (state.selection.constructor as any).near(state.doc.resolve(to)),
-    );
+    // Force hide all tippy tooltips
+    const tippyElements = document.querySelectorAll('[data-state="visible"]');
+    tippyElements.forEach(el => {
+      el.setAttribute('data-state', 'hidden');
+    });
+    // Clear selection and blur editor
+    editor.commands.setTextSelection({ from: 0, to: 0 });
+    editor.commands.blur();
+    // Force document click to close any remaining menus
+    setTimeout(() => {
+      document.activeElement instanceof HTMLElement && document.activeElement.blur();
+      // Trigger a click event to close any remaining popups
+      document.body.click();
+    }, 0);
   };
 
   const promptForLink = () => {
@@ -295,7 +310,6 @@ export default function RichTextEditor({ initialContent, onReady }: RichTextEdit
       <div className="editor-surface">
         <BubbleMenu
           editor={editor}
-          // @ts-ignore - tippyOptions exists but not in types
           shouldShow={({ editor }) => {
             const { from, to } = editor.state.selection;
             return from !== to;
@@ -350,7 +364,6 @@ export default function RichTextEditor({ initialContent, onReady }: RichTextEdit
             >
               HL
             </button>
-
             <div className="rte-color-group">
               {COLOR_PALETTE.map((color) => {
                 const isActiveColor =
