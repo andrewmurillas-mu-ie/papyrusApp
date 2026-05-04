@@ -167,6 +167,55 @@ function scorePage(title: string, contentText: string, keywords: string[]): numb
   );
 }
 
+function deriveTitleFromContent(title: string, contentText: string): string {
+  const cleanedTitle = title.trim();
+
+  if (cleanedTitle && cleanedTitle.toLowerCase() !== 'untitled page') {
+    return cleanedTitle.slice(0, 80);
+  }
+
+  const firstSentence = contentText
+    .split(/[.!?\n]/)[0]
+    ?.trim();
+
+  if (!firstSentence) {
+    return 'Untitled page';
+  }
+
+  const weakEndingWords = new Set([
+    'are',
+    'is',
+    'was',
+    'were',
+    'and',
+    'or',
+    'the',
+    'a',
+    'an',
+    'of',
+    'to',
+    'in',
+    'on',
+    'for',
+    'with',
+  ]);
+
+  const words = firstSentence
+    .split(/\s+/)
+    .slice(0, 7);
+
+  while (
+    words.length > 3 &&
+    weakEndingWords.has(words[words.length - 1].toLowerCase())
+  ) {
+    words.pop();
+  }
+
+  const generatedTitle = words.join(' ');
+
+  return generatedTitle || 'Untitled page';
+}
+
 export async function requestGrammarAssist(req: Request, res: Response): Promise<void> {
   try {
     const rawText = typeof req.body.text === 'string' ? req.body.text : '';
@@ -264,13 +313,14 @@ export async function requestSaveSearchablePage(req: Request, res: Response): Pr
       return;
     }
 
-    const title =
+    const rawTitle =
       typeof req.body.title === 'string' && req.body.title.trim()
         ? req.body.title.trim()
         : 'Untitled page';
 
     const contentHtml = typeof req.body.contentHtml === 'string' ? req.body.contentHtml : '';
     const contentText = htmlToPlainText(contentHtml);
+    const title = deriveTitleFromContent(rawTitle, contentText);
     const ownerId = typeof req.body.ownerId === 'string' ? req.body.ownerId : '';
     const sourceKey =
       typeof req.body.sourceKey === 'string' && req.body.sourceKey.trim()
