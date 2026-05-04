@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import userService from '../api/userService';
 import { useAuth } from '../context/AuthContext';
+import { usePages } from '../context/PagesContext';
 import InfoBanner from '../components/InfoBanner';
 
 interface User {
@@ -28,6 +29,7 @@ const formatDate = (value: string | undefined): string => {
 
 export default function DashboardPage(): React.ReactElement {
     const { user } = useAuth();
+    const { pages, loading: pagesLoading } = usePages();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -50,13 +52,18 @@ export default function DashboardPage(): React.ReactElement {
     }, []);
 
     const sortedUsers = [...users].sort((a, b) => {
-        if (!user?.id) return 0;
-        const aIsCurrent = a._id === user.id;
-        const bIsCurrent = b._id === user.id;
+        if (!user?._id) return 0;
+        const aIsCurrent = a._id === user._id;
+        const bIsCurrent = b._id === user._id;
         if (aIsCurrent && !bIsCurrent) return -1;
         if (!aIsCurrent && bIsCurrent) return 1;
         return 0;
     });
+
+    // Get recent pages (sorted by updatedAt, limited to 5)
+    const recentPages = [...pages]
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .slice(0, 5);
 
     return (
         <section className="page-stack">
@@ -64,7 +71,7 @@ export default function DashboardPage(): React.ReactElement {
             <div className="hero-card hero-card--split">
                 <div className="hero-copy">
                     <p className="eyebrow">Dashboard</p>
-                    <h2>Hello, {user?.name || 'there'}</h2>
+                    <h2>Hello, {user?.fullName || 'there'}</h2>
                     <p className="muted">
                         This is the current frontend base for Papyrus. It uses the existing
                         user API and leaves workspace features ready for later.
@@ -98,7 +105,7 @@ export default function DashboardPage(): React.ReactElement {
                             {user?.avatarUrl ? (
                                 <img
                                     src={user.avatarUrl}
-                                    alt={user?.name || 'User avatar'}
+                                    alt={user?.fullName || 'User avatar'}
                                     style={{
                                         width: '100%',
                                         height: '100%',
@@ -107,11 +114,11 @@ export default function DashboardPage(): React.ReactElement {
                                     }}
                                 />
                             ) : (
-                                (user?.name?.[0] || 'U')
+                                (user?.fullName?.[0] || 'U')
                             )}
                         </div>
                         <div>
-                            <h3>{user?.name || 'Papyrus User'}</h3>
+                            <h3>{user?.fullName || 'Papyrus User'}</h3>
                             <p className="muted">
                                 {user?.email || 'GitHub-connected user'}
                             </p>
@@ -133,14 +140,48 @@ export default function DashboardPage(): React.ReactElement {
                 <article className="panel-card">
                     <div className="panel-header">
                         <h3>Recent pages</h3>
+                        <span>{pagesLoading ? 'Loading...' : `${recentPages.length} pages`}</span>
                     </div>
-                    <div className="empty-state">
-                        <p>No recent pages yet.</p>
-                        <span>
-              Add page routes and a pages collection to replace this
-              placeholder.
-            </span>
-                    </div>
+                    {pagesLoading ? (
+                        <div className="empty-state">
+                            <p>Loading recent pages...</p>
+                        </div>
+                    ) : recentPages.length === 0 ? (
+                        <div className="empty-state">
+                            <p>No recent pages yet.</p>
+                            <span>
+                Create your first page to get started with the "New Page" button in the sidebar.
+              </span>
+                            <div style={{ marginTop: '1rem' }}>
+                                <Link className="primary-button" to="/editor">
+                                    Create First Page
+                                </Link>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="list-stack">
+                            {recentPages.map((page) => (
+                                <Link
+                                    key={page.id}
+                                    to={`/editor/${page.id}`}
+                                    className="list-row"
+                                    style={{ textDecoration: 'none', color: 'inherit' }}
+                                >
+                                    <div className="avatar-circle">
+                                        {page.icon || '📄'}
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <strong style={{ display: 'block', marginBottom: '0.25rem' }}>
+                                            {page.title}
+                                        </strong>
+                                        <p className="muted" style={{ fontSize: '12px', margin: 0 }}>
+                                            Updated {formatDate(page.updatedAt)}
+                                        </p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                 </article>
             </div>
 
@@ -164,7 +205,7 @@ export default function DashboardPage(): React.ReactElement {
 
                 <div className="list-stack">
                     {sortedUsers.map((item, index) => {
-                        const isCurrent = user?.id && item._id === user.id;
+                        const isCurrent = user?._id && item._id === user._id;
                         return (
                             <div
                                 key={`${item.email}-${index}`}

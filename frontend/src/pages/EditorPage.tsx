@@ -1,165 +1,267 @@
 import { useEffect, useRef, useState, ChangeEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import InfoBanner from '../components/InfoBanner';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { usePages } from '../context/PagesContext';
 import RichTextEditor from '../components/RichTextEditor';
-
-type Template = 'meeting-notes' | 'project-brief' | 'study-tracker' | '';
-
-function getInitialContent(template: Template): string {
-    switch (template) {
-        case 'meeting-notes':
-            return (
-                '<h1>Meeting notes</h1>' +
-                '<p><strong>Agenda</strong></p>' +
-                '<ul><li></li></ul>' +
-                '<p><strong>Notes</strong></p>' +
-                '<ul><li></li></ul>' +
-                '<p><strong>Action items</strong></p>' +
-                '<ul><li></li></ul>'
-            );
-        case 'project-brief':
-            return (
-                '<h1>Project brief</h1>' +
-                '<p><strong>Scope</strong></p><p></p>' +
-                '<p><strong>Goals</strong></p><p></p>' +
-                '<p><strong>Milestones</strong></p><p></p>' +
-                '<p><strong>Owners</strong></p><p></p>'
-            );
-        case 'study-tracker':
-            return (
-                '<h1>Study tracker</h1>' +
-                '<p><strong>Topic</strong></p><p></p>' +
-                '<p><strong>Deadline</strong></p><p></p>' +
-                '<p><strong>Revision blocks</strong></p><p></p>'
-            );
-        default:
-            return '';
-    }
-}
 
 export default function EditorPage(): React.ReactElement {
     const { user } = useAuth();
-    const [searchParams] = useSearchParams();
-    const template = (searchParams.get('template') as Template) || '';
+    const { pageId } = useParams<{ pageId?: string }>();
+    const navigate = useNavigate();
+    const { 
+        currentPage, 
+        setCurrentPage, 
+        updatePage, 
+        createPage,
+        getRootPages,
+        loading 
+    } = usePages();
 
     const [title, setTitle] = useState('');
-    const [bodyHtml, setBodyHtml] = useState('');
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editTitle, setEditTitle] = useState('');
     const [lastSaved, setLastSaved] = useState('');
 
     // holds a function we can call to get current HTML from Tiptap
     const getEditorHtmlRef = useRef<(() => string) | null>(null);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const storageKey = user
-        ? `papyrus_editor_${user._id}_${template || 'default'}`
-        : `papyrus_editor_guest_${template || 'default'}`;
-
-    // Load from localStorage or template
+    // Handle page selection and routing
     useEffect(() => {
-        const raw = localStorage.getItem(storageKey);
-        if (raw) {
-            try {
-                const parsed = JSON.parse(raw);
-                setTitle(parsed.title || '');
-                setBodyHtml(parsed.bodyHtml || '');
-                setLastSaved(parsed.lastSaved || '');
-                return;
-            } catch {
-                /* fall back to template */
+        const handlePageRouting = async () => {
+            if (loading) return;
+
+            if (pageId) {
+                // If pageId is provided, set it as current page
+                await setCurrentPage(pageId);
+            } else if (!currentPage) {
+                // If no pageId and no current page, redirect to first available page
+                const rootPages = getRootPages();
+                if (rootPages.length > 0) {
+                    navigate(`/editor/${rootPages[0].id}`, { replace: true });
+                } else {
+                    // If no pages exist, create one
+                    const newPage = await createPage({ title: 'Untitled', content: '' });
+                    navigate(`/editor/${newPage.id}`, { replace: true });
+                }
             }
+        };
+
+        handlePageRouting();
+    }, [pageId, currentPage, loading, setCurrentPage, createPage, getRootPages, navigate]);
+
+    // Update local state when currentPage changes
+    useEffect(() => {
+        if (currentPage) {
+            setTitle(currentPage.title);
+            setEditTitle(currentPage.title);
+            setLastSaved(currentPage.updatedAt);
+        }
+    }, [currentPage]);
+
+    // Debounced save function
+    const savePageContent = useRef((content: string) => {
+        if (!currentPage) return;
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
         }
 
-        setTitle('');
-        setBodyHtml(getInitialContent(template));
-        setLastSaved('');
-    }, [storageKey, template]);
+        saveTimeoutRef.current = setTimeout(() => {
+            updatePage(currentPage.id, { content });
+            setLastSaved(new Date().toISOString());
+        }, 1000); // 1 second debounce
+    }).current;
 
-    // Autosave every 2 seconds while on this page (read-only from editor)
+    // Setup editor with current page content
     useEffect(() => {
-        const interval = setInterval(() => {
-            const getHtml = getEditorHtmlRef.current;
-            if (!getHtml) return;
+        if (currentPage && getEditorHtmlRef.current) {
+            // Editor will be initialized with current page content
+        }
+    }, [currentPage]);
 
-            const currentHtml = getHtml();
+    const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setEditTitle(e.target.value);
+    };
 
-            const payload = {
-                title,
-                bodyHtml: currentHtml,
-                lastSaved: new Date().toISOString(),
-            };
+    const handleTitleSave = async () => {
+        if (!currentPage) return;
+        
+        const newTitle = editTitle.trim() || 'Untitled';
+        setTitle(newTitle);
+        await updatePage(currentPage.id, { title: newTitle });
+        setIsEditingTitle(false);
+    };
 
-            localStorage.setItem(storageKey, JSON.stringify(payload));
-            setLastSaved(payload.lastSaved);
-        }, 2000);
+    const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleTitleSave();
+        } else if (e.key === 'Escape') {
+            setEditTitle(title);
+            setIsEditingTitle(false);
+        }
+    };
 
-        return () => clearInterval(interval);
-    }, [title, storageKey]);
+    const handleStartEditTitle = () => {
+        setIsEditingTitle(true);
+        setEditTitle(title);
+    };
 
+    const handleToggleFavorite = async () => {
+        if (!currentPage) return;
+        await updatePage(currentPage.id, { isFavorite: !currentPage.isFavorite });
+    };
+
+    const handleDuplicate = async () => {
+        if (!currentPage) return;
+        const duplicatedPage = await createPage({
+            title: `${currentPage.title} (copy)`,
+            content: currentPage.content,
+        });
+        navigate(`/editor/${duplicatedPage.id}`);
+    };
+
+    const handleCreateSubpage = async () => {
+        if (!currentPage) return;
+        const subpage = await createPage({
+            title: 'Untitled',
+            parentId: currentPage.id,
+            content: '',
+        });
+        navigate(`/editor/${subpage.id}`);
+    };
+
+    
     const formattedLastSaved = lastSaved
-        ? new Date(lastSaved).toLocaleTimeString('en-GB', {
+        ? new Date(lastSaved).toLocaleString('en-GB', {
+            day: 'numeric',
+            month: 'short',
             hour: '2-digit',
             minute: '2-digit',
         })
         : 'Not saved yet';
 
-    const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setTitle(e.target.value);
-    };
+    if (loading || !currentPage) {
+        return (
+            <section className="page-stack">
+                <div style={{ textAlign: 'center', padding: '4rem' }}>
+                    <div>Loading page...</div>
+                </div>
+            </section>
+        );
+    }
 
     return (
         <section className="page-stack">
-            <div className="hero-card hero-card--split">
-                <div className="hero-copy">
-                    <p className="eyebrow">Editor</p>
-                    <h2>Page editor</h2>
-                    <p className="muted">
-                        This editor keeps your work in this browser and can be prefilled
-                        from templates. Later you can connect it to real pages and versions.
-                    </p>
+            {/* Page Header */}
+            <div className="page-header" style={{ marginBottom: '2rem' }}>
+                {/* Title and actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                    {isEditingTitle ? (
+                        <input
+                            type="text"
+                            value={editTitle}
+                            onChange={handleTitleChange}
+                            onBlur={handleTitleSave}
+                            onKeyDown={handleTitleKeyDown}
+                            className="page-title-input"
+                            style={{
+                                fontSize: '2rem',
+                                fontWeight: '600',
+                                border: '1px solid var(--color-border, #ccc)',
+                                borderRadius: '4px',
+                                padding: '8px 12px',
+                                background: 'var(--color-background, #fff)',
+                                color: 'var(--color-text, #333)',
+                            }}
+                            autoFocus
+                        />
+                    ) : (
+                        <h1
+                            onClick={handleStartEditTitle}
+                            style={{
+                                fontSize: '2rem',
+                                fontWeight: '600',
+                                margin: 0,
+                                cursor: 'pointer',
+                                padding: '8px 12px',
+                                borderRadius: '4px',
+                                transition: 'background-color 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--color-hover, #f5f5f5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                        >
+                            {currentPage.title}
+                        </h1>
+                    )}
+
+                    {/* Page actions */}
+                    <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
+                        <button
+                            onClick={handleToggleFavorite}
+                            className="ghost-button"
+                            title={currentPage.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                            style={{ fontSize: '16px' }}
+                        >
+                            {currentPage.isFavorite ? '⭐' : '☆'}
+                        </button>
+                        <button
+                            onClick={handleCreateSubpage}
+                            className="ghost-button"
+                            title="Create subpage"
+                        >
+                            📄
+                        </button>
+                        <button
+                            onClick={handleDuplicate}
+                            className="ghost-button"
+                            title="Duplicate page"
+                        >
+                            📋
+                        </button>
+                                            </div>
                 </div>
 
-                <div className="quick-actions quick-actions--right">
-                    <button className="secondary-button" disabled>
-                        AI summary
-                    </button>
-                    <button className="secondary-button" disabled>
-                        Version history
-                    </button>
-                    <button className="secondary-button" disabled>
-                        Export
-                    </button>
+                {/* Page metadata */}
+                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: 'var(--color-muted, #666)' }}>
+                    <span>Created {new Date(currentPage.createdAt).toLocaleDateString()}</span>
+                    <span>•</span>
+                    <span>Last edited {formattedLastSaved}</span>
+                    {currentPage.parentId && (
+                        <>
+                            <span>•</span>
+                            <span>Subpage</span>
+                        </>
+                    )}
                 </div>
             </div>
 
-            <InfoBanner title="Local-only editor" tone="warning">
-                Content is auto-saved to this browser only. Wire this up to a real page
-                API when you are ready for backend persistence and collaboration.
-            </InfoBanner>
-
+            {/* Editor */}
             <article className="panel-card editor-card">
-                <label>
-                    Page title
-                    <input
-                        type="text"
-                        placeholder="Untitled page"
-                        value={title}
-                        onChange={handleTitleChange}
-                    />
-                </label>
-
                 <RichTextEditor
-                    initialContent={bodyHtml}
+                    initialContent={currentPage.content}
                     onReady={(getHtml: () => string) => {
                         getEditorHtmlRef.current = getHtml;
+                        
+                        // Set up auto-save
+                        const interval = setInterval(() => {
+                            const currentHtml = getHtml();
+                            savePageContent(currentHtml);
+                        }, 2000);
+
+                        return () => clearInterval(interval);
                     }}
                 />
 
                 <div className="editor-footer">
-                    <span className="muted">Last saved: {formattedLastSaved}</span>
+                    <span className="muted">Auto-saved</span>
                     <span className="muted">
-            Auto-saved for user {user?.fullName || 'guest'}
-                        {template ? ` · Template: ${template}` : ''}
-          </span>
+                        Editing as {user?.fullName || 'guest'}
+                    </span>
                 </div>
             </article>
         </section>

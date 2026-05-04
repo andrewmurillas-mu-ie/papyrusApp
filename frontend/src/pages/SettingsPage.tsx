@@ -37,7 +37,7 @@ export default function SettingsPage(): React.ReactElement {
         if (user) {
             setProfile((current) => ({
                 ...current,
-                name: user.name || '',
+                name: user.fullName || '',
                 email: user.email || '',
                 avatarUrl: user.avatarUrl || '',
                 createdAt: user.createdAt || '',
@@ -51,11 +51,11 @@ export default function SettingsPage(): React.ReactElement {
         setStatus({ loading: true, error: '', success: '' });
 
         try {
-            if (!user?.id) {
+            if (!user?._id) {
                 setUser({
                     ...user,
                     ...profile,
-                    id: user?.id || '',
+                    _id: user?._id || '',
                     updatedAt: new Date().toISOString(),
                 } as any);
                 setStatus({
@@ -74,7 +74,7 @@ export default function SettingsPage(): React.ReactElement {
                 updatedAt: new Date().toISOString(),
             };
 
-            const updated = await userService.updateUser(user.id, payload);
+            const updated = await userService.updateUser(user._id, payload);
 
             setUser(updated);
             setStatus({

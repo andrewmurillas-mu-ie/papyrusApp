@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { usePages } from '../context/PagesContext';
+
+interface TemplateContentItem {
+    type: string;
+    attrs?: { level: number };
+    content?: Array<{ type: string; text: string }>;
+}
 
 interface TemplateContent {
     type: string;
-    content: Array<{
-        type: string;
-        attrs?: { level: number };
-        content?: Array<{ type: string; text: string }>;
-    }>;
+    content?: TemplateContentItem[];
 }
 
 interface Template {
@@ -20,19 +23,48 @@ interface Template {
 
 const templates: Template[] = [
     {
+        slug: 'blank-page',
+        name: 'Blank page',
+        description: 'A clean slate for your ideas.',
+        content: {
+            type: 'root',
+            content: [
+                { type: 'paragraph', content: [{ type: 'text', text: 'Start writing here...' }] },
+            ],
+        },
+    },
+    {
+        slug: 'todo-list',
+        name: 'Todo List',
+        description: 'Simple task list for daily planning.',
+        content: {
+            type: 'root',
+            content: [
+                { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Todo List' }] },
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Today' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '☐ Task 1' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '☐ Task 2' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '☐ Task 3' }] },
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'This Week' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '☐ Important task' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '☐ Another task' }] },
+            ],
+        },
+    },
+    {
         slug: 'meeting-notes',
         name: 'Meeting notes',
         description: 'Simple structure for agendas, notes, and action items.',
         content: {
-            type: 'doc',
+            type: 'root',
             content: [
                 { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Meeting Notes' }] },
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Agenda' }] },
-                { type: 'paragraph' },
+                { type: 'paragraph', content: [{ type: 'text', text: '' }] },
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Notes' }] },
-                { type: 'paragraph' },
+                { type: 'paragraph', content: [{ type: 'text', text: '' }] },
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Action Items' }] },
-                { type: 'paragraph' },
+                { type: 'paragraph', content: [{ type: 'text', text: '' }] },
             ],
         },
     },
@@ -41,15 +73,17 @@ const templates: Template[] = [
         name: 'Project brief',
         description: 'Capture scope, goals, milestones, and owners.',
         content: {
-            type: 'doc',
+            type: 'root',
             content: [
                 { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Project Brief' }] },
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Overview' }] },
-                { type: 'paragraph' },
+                { type: 'paragraph', content: [{ type: 'text', text: 'Project description and objectives go here.' }] },
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Goals' }] },
-                { type: 'paragraph' },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Goal 1' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Goal 2' }] },
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Milestones' }] },
-                { type: 'paragraph' },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Milestone 1 - Date' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Milestone 2 - Date' }] },
             ],
         },
     },
@@ -58,15 +92,55 @@ const templates: Template[] = [
         name: 'Study tracker',
         description: 'Track topics, deadlines, and revision blocks.',
         content: {
-            type: 'doc',
+            type: 'root',
             content: [
                 { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Study Tracker' }] },
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Topics' }] },
-                { type: 'paragraph' },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Topic 1 - Status' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Topic 2 - Status' }] },
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Deadlines' }] },
-                { type: 'paragraph' },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Assignment 1 - Due Date' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Assignment 2 - Due Date' }] },
                 { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Revision Schedule' }] },
-                { type: 'paragraph' },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Review Topic 1 - Date' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Review Topic 2 - Date' }] },
+            ],
+        },
+    },
+    {
+        slug: 'journal',
+        name: 'Journal',
+        description: 'Daily journal for thoughts and reflections.',
+        content: {
+            type: 'root',
+            content: [
+                { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Journal Entry' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'Date: ' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '' }] },
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Today\'s Thoughts' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'Write your thoughts and reflections here...' }] },
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Gratitude' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• What are you grateful for today?' }] },
+            ],
+        },
+    },
+    {
+        slug: 'brainstorm',
+        name: 'Brainstorm',
+        description: 'Free-form space for creative ideas.',
+        content: {
+            type: 'root',
+            content: [
+                { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Brainstorm Session' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'Main Idea:' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '' }] },
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Key Points' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Point 1' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Point 2' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Point 3' }] },
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Next Steps' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Action 1' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: '• Action 2' }] },
             ],
         },
     },
@@ -75,22 +149,47 @@ const templates: Template[] = [
 export default function TemplatesPage(): React.ReactElement {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { createPage, currentWorkspace } = usePages();
     const [loading, setLoading] = useState<string | null>(null);
 
     const handleUseTemplate = async (template: Template) => {
         setLoading(template.slug);
+        
+        // Convert template content to HTML string
+        const contentToHtml = (content: TemplateContent): string => {
+            if (!content || !content.content) return '<p>Start writing here...</p>';
+            
+            return content.content.map((item: TemplateContentItem) => {
+                if (item.type === 'heading') {
+                    const level = item.attrs?.level || 1;
+                    const text = item.content?.map(c => c.text).join('') || '';
+                    return `<h${level}>${text}</h${level}>`;
+                } else if (item.type === 'paragraph') {
+                    const text = item.content?.map(c => c.text).join('') || '';
+                    return `<p>${text}</p>`;
+                }
+                return '';
+            }).join('\n');
+        };
+
         try {
-            const res = await fetch('http://localhost:3000/documents', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    title: template.name,
-                    content: template.content,
-                }),
+            console.log('Creating page from template:', template.name);
+            const htmlContent = contentToHtml(template.content);
+            console.log('Generated HTML content:', htmlContent);
+            
+            if (!currentWorkspace) {
+                console.error('No workspace selected');
+                return;
+            }
+            
+            const newPage = await createPage({
+                title: template.name,
+                content: htmlContent,
+                workspaceId: currentWorkspace.id
             });
-            const doc = await res.json();
-            navigate(`/editor/${doc._id}`);
+            
+            console.log('Page created successfully:', newPage);
+            navigate(`/editor/${newPage.id}`);
         } catch (err) {
             console.error('Failed to create from template:', err);
         } finally {

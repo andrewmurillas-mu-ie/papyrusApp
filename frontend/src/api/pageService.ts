@@ -1,23 +1,24 @@
-import { api } from "./client.ts";
-import Page from "../backend_objects/Page.ts";
+import { api } from "./client";
+import { WorkspacePage } from "../types/page";
 
 const pageService = {
-  getAll: async (): Promise<Page[]> => {
-    const { data } = await api.get("/page");
+  getAll: async (params?: { workspaceId?: string }): Promise<WorkspacePage[]> => {
+    const url = params?.workspaceId ? `/page?workspaceId=${params.workspaceId}` : "/page";
+    const { data } = await api.get(url);
     return data;
   },
-  getPageById: async (id: string): Promise<Page> => {
+  getPageById: async (id: string): Promise<WorkspacePage> => {
     const { data } = await api.get(`/page/${id}`);
     return data;
   },
-  createPage: async (payload: string): Promise<void> => {
+  createPage: async (payload: Partial<WorkspacePage>): Promise<WorkspacePage> => {
     const { data } = await api.post("/page", payload);
     return data;
   },
   updatePage: async (
     id: string,
-    payload: Record<string, unknown>,
-  ): Promise<any> => {
+    payload: Partial<WorkspacePage>,
+  ): Promise<WorkspacePage> => {
     const { data } = await api.put(`/page/${id}`, payload);
     return data;
   },

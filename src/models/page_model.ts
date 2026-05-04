@@ -5,24 +5,28 @@ type ObjectId = Types.ObjectId;
 
 export default interface Page {
   title: string;
-  workspace: ObjectId;
+  icon: string;
+  content: string;
+  workspaceId: ObjectId;
+  parentId: ObjectId | null;
+  isFavorite: boolean;
   createdBy: ObjectId;
-  blocks: ObjectId[];
-  isShared: boolean;
-  currentVersion: number;
+  updatedBy: ObjectId;
   createdAt: Date;
-  lastUpdate: Date;
+  updatedAt: Date;
 }
 
 const PageSchema = new Schema<Page>({
   title: { type: String, required: true },
-  workspace: { type: Schema.Types.ObjectId, ref: "Workspace", required: true },
+  icon: { type: String, default: '📄' },
+  content: { type: String, default: '' },
+  workspaceId: { type: Schema.Types.ObjectId, ref: "Workspace", required: true },
+  parentId: { type: Schema.Types.ObjectId, ref: "Page", default: null },
+  isFavorite: { type: Boolean, default: false },
   createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  blocks: [{ type: Schema.Types.ObjectId, ref: "Block" }],
-  isShared: { type: Boolean, default: false },
-  currentVersion: { type: Number, default: 1 },
+  updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   createdAt: { type: Date, default: Date.now },
-  lastUpdate: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
 const PageModel: Model<Page> = mongoose.model<Page>("Page", PageSchema);
@@ -31,33 +35,55 @@ export async function getPage(pageId: string): Promise<Page | null> {
   return PageModel.findById(pageId);
 }
 
-export async function getPagesByUserWorkspaces(
-  userId: string,
+export async function getPagesByWorkspace(
+  workspaceId: string,
 ): Promise<Page[]> {
-  const userObjectId = new Types.ObjectId(userId);
-  const userWorkspaces = await WorkspaceModel.find(
-    { $or: [{ owner: userObjectId }, { "members.user": userObjectId }] },
-    { _id: 1 },
-  );
-  const workspaceIds = userWorkspaces.map((w) => w._id);
-  return PageModel.find({ workspace: { $in: workspaceIds } });
+  const workspaceObjectId = new Types.ObjectId(workspaceId);
+  return PageModel.find({ workspaceId: workspaceObjectId }).sort({ updatedAt: -1 });
 }
 
 export async function isPageOwnedByUser(
   pageId: string,
   userId: string,
 ): Promise<boolean> {
-  const page = await PageModel.findById(pageId, { workspace: 1 });
+  const page = await PageModel.findById(pageId, { createdBy: 1 });
   if (!page) return false;
-  const workspace = await WorkspaceModel.findOne({
-    _id: page.workspace,
-    owner: new Types.ObjectId(userId),
-  });
-  return workspace !== null;
+  return page.createdBy.toString() === userId;
 }
 
 export async function getAllPages(): Promise<Page[]> {
   return PageModel.find();
+}
+
+export async function canUserAccessPage(
+  pageId: string,
+  userId: string
+): Promise<boolean> {
+  const page = await PageModel.findById(pageId).populate('workspaceId');
+  if (!page) return false;
+  
+  // Check if user can access the workspace
+  const workspace = page.workspaceId as any;
+  const userRole = await workspace.members.find(
+    (member: any) => member.user.toString() === userId
+  );
+  return !!userRole || workspace.owner.toString() === userId;
+}
+
+export async function canUserEditPage(
+  pageId: string,
+  userId: string
+): Promise<boolean> {
+  const page = await PageModel.findById(pageId).populate('workspaceId');
+  if (!page) return false;
+  
+  // Check if user can edit the workspace
+  const workspace = page.workspaceId as any;
+  const userRole = workspace.members.find(
+    (member: any) => member.user.toString() === userId
+  );
+  const role = userRole?.role;
+  return role === "owner" || role === "admin" || role === "editor";
 }
 
 export async function createPage(page: Page): Promise<Page> {
