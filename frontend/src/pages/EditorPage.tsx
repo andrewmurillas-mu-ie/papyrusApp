@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, ChangeEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import InfoBanner from '../components/InfoBanner';
 import { useAuth } from '../context/AuthContext';
 import RichTextEditor from '../components/RichTextEditor';
+import pageService from '../api/pageService';
 import {
   requestGrammarAssistance,
   savePageForSearch,
@@ -67,14 +68,28 @@ function plainTextToEditorHtml(text: string): string {
     .join('');
 }
 
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export default function EditorPage(): React.ReactElement {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { pageId } = useParams();
   const [searchParams] = useSearchParams();
   const template = (searchParams.get('template') as Template) || '';
 
+  const [currentPageId, setCurrentPageId] = useState(pageId || '');
   const [title, setTitle] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [lastSaved, setLastSaved] = useState('');
+  const [pageLoading, setPageLoading] = useState(false);
+  const [pageError, setPageError] = useState('');
+
   const [grammarLoading, setGrammarLoading] = useState(false);
   const [grammarResult, setGrammarResult] = useState<GrammarResponse | null>(null);
   const [grammarError, setGrammarError] = useState('');
@@ -82,17 +97,45 @@ export default function EditorPage(): React.ReactElement {
   const [searchSyncError, setSearchSyncError] = useState('');
 
   const getEditorHtmlRef = useRef<(() => string) | null>(null);
-  const lastSearchSyncRef = useRef('');
+  const lastPageSyncRef = useRef('');
 
   useEffect(() => {
-    setTitle('');
-    setBodyHtml(getInitialContent(template));
-    setLastSaved('');
-    setGrammarResult(null);
-    setGrammarError('');
-    setSearchSyncStatus('');
-    setSearchSyncError('');
-  }, [template]);
+    const loadPage = async () => {
+      setPageError('');
+      setGrammarResult(null);
+      setGrammarError('');
+      setSearchSyncStatus('');
+      setSearchSyncError('');
+      lastPageSyncRef.current = '';
+
+      if (!pageId) {
+        setCurrentPageId('');
+        setTitle('');
+        setBodyHtml(getInitialContent(template));
+        setLastSaved('');
+        return;
+      }
+
+      setPageLoading(true);
+
+      try {
+        const page = await pageService.getPageById(pageId);
+        setCurrentPageId(page._id);
+        setTitle(page.title || '');
+        setBodyHtml(page.contentHtml || '');
+        setLastSaved(page.lastUpdate || '');
+      } catch (error: any) {
+        setPageError(
+          error.response?.data?.error ||
+            'Could not load this page. Check that you have access to it.',
+        );
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    loadPage();
+  }, [pageId, template]);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -101,40 +144,50 @@ export default function EditorPage(): React.ReactElement {
       if (!getHtml || !user?._id) return;
 
       const currentHtml = getHtml();
-      const plainText = currentHtml
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/&nbsp;/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const plainText = htmlToPlainText(currentHtml);
 
       if (!plainText) return;
 
-      const syncKey = `${title || 'Untitled page'}|${currentHtml}`;
+      const syncKey = `${currentPageId || 'new'}|${title || 'Untitled page'}|${currentHtml}`;
 
-      if (lastSearchSyncRef.current === syncKey) return;
+      if (lastPageSyncRef.current === syncKey) return;
 
       try {
-        setSearchSyncStatus('Syncing page...');
+        setSearchSyncStatus('Saving page...');
 
-        const savedPage = await savePageForSearch({
+        const pagePayload = {
           title: title || 'Untitled page',
           contentHtml: currentHtml,
-          ownerId: user._id,
-          sourceKey: `editor-${user._id}-${template || 'default'}`,
-        });
+        };
 
-        const generatedTitle = savedPage?.page?.title;
+        const savedPage = currentPageId
+          ? await pageService.updatePage(currentPageId, pagePayload)
+          : await pageService.createPage(pagePayload);
+
+        const savedPageId = savedPage._id;
+
+        if (!currentPageId) {
+          setCurrentPageId(savedPageId);
+          navigate(`/editor/${savedPageId}`, { replace: true });
+        }
 
         if (
           !title.trim() &&
-          generatedTitle &&
-          generatedTitle.toLowerCase() !== 'untitled page'
+          savedPage.title &&
+          savedPage.title.toLowerCase() !== 'untitled page'
         ) {
-          setTitle(generatedTitle);
+          setTitle(savedPage.title);
         }
 
-        lastSearchSyncRef.current = syncKey;
-        setLastSaved(new Date().toISOString());
+        await savePageForSearch({
+          title: savedPage.title || title || 'Untitled page',
+          contentHtml: currentHtml,
+          ownerId: user._id,
+          sourceKey: `page-${savedPageId}`,
+        });
+
+        lastPageSyncRef.current = syncKey;
+        setLastSaved(savedPage.lastUpdate || new Date().toISOString());
         setSearchSyncStatus(
           `Saved and searchable · Last synced: ${new Date().toLocaleTimeString(
             'en-GB',
@@ -148,13 +201,13 @@ export default function EditorPage(): React.ReactElement {
       } catch (error: any) {
         setSearchSyncError(
           error.response?.data?.error ||
-            'Could not sync this page for smart search.',
+            'Could not save or sync this page.',
         );
       }
     }, 7000);
 
     return () => clearInterval(interval);
-  }, [title, template, user?._id]);
+  }, [currentPageId, title, user?._id, navigate]);
 
   const handleGrammarAssist = async () => {
     const getHtml = getEditorHtmlRef.current;
@@ -166,7 +219,7 @@ export default function EditorPage(): React.ReactElement {
 
     const currentHtml = getHtml();
 
-    if (!currentHtml || currentHtml.trim() === '<p></p>') {
+    if (!htmlToPlainText(currentHtml)) {
       setGrammarError('Please write some text before using grammar assistance.');
       return;
     }
@@ -216,10 +269,10 @@ export default function EditorPage(): React.ReactElement {
       <div className="hero-card hero-card--split">
         <div className="hero-copy">
           <p className="eyebrow">Editor</p>
-          <h2>Page editor</h2>
+          <h2>{currentPageId ? 'Edit page' : 'New page'}</h2>
           <p className="muted">
-            Write a new page, check grammar, and sync content so it can be found
-            by Smart Search.
+            Write a page, check grammar, save it to MongoDB, and sync it for
+            Smart Search.
           </p>
         </div>
 
@@ -241,10 +294,15 @@ export default function EditorPage(): React.ReactElement {
         </div>
       </div>
 
-      <InfoBanner title="Smart editor">
-        This editor opens as a blank page unless a template is selected. Content
-        is synced to MongoDB so it can be found through Smart Search.
+      <InfoBanner title={currentPageId ? 'Saved page editor' : 'New blank page'}>
+        {currentPageId
+          ? 'This page is loaded from MongoDB and autosaves back to the same page.'
+          : 'Start typing to create a new page. Once saved, it can be opened again from the workspace.'}
       </InfoBanner>
+
+      {pageError ? (
+        <div className="info-banner info-banner--warning">{pageError}</div>
+      ) : null}
 
       <article className="panel-card editor-card">
         <label>
@@ -254,6 +312,7 @@ export default function EditorPage(): React.ReactElement {
             placeholder="Untitled page"
             value={title}
             onChange={handleTitleChange}
+            disabled={pageLoading}
           />
         </label>
 

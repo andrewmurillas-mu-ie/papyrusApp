@@ -22,6 +22,7 @@ export default function App(): React.ReactElement {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/workspace" element={<WorkspacePage />} />
           <Route path="/editor" element={<EditorPage />} />
+          <Route path="/editor/:pageId" element={<EditorPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
